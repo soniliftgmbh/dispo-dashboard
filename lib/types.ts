@@ -1,5 +1,5 @@
 export type Role   = 'admin' | 'user';
-export type Status = 'neu' | 'bereit' | 'in_kontakt' | 'ruckruf' | 'uebergeben' | 'final';
+export type Status = 'neu' | 'bereit' | 'in_kontakt' | 'ruckruf' | 'uebergeben' | 'erkrankt' | 'final';
 
 export interface Entry {
   id:                   string;
@@ -54,9 +54,15 @@ export interface Stats {
   heute:       number;
 }
 
+export function isErkrankt(e: Entry): boolean {
+  return (e.auftragstyp ?? '').toLowerCase().includes('erkrankt');
+}
+
 // Status-Ableitung — Single Source of Truth
 export function deriveStatus(e: Entry): Status {
   if (e.final) return 'final';
+  // Erkrankt-Einträge bekommen immer ihren eigenen Status — unabhängig von allem anderen
+  if (isErkrankt(e)) return 'erkrankt';
   const dispo = (e.dispo_info ?? '').trim().toLowerCase();
   if (dispo === '-' || dispo === 'übergeben' || dispo === 'uebergeben') return 'uebergeben';
   if (e.callback_time) return 'ruckruf';

@@ -55,13 +55,15 @@ export async function POST(req: NextRequest) {
       const today = now.toISOString().slice(0, 10);
 
       const { rows } = await pool.query(
-        `SELECT tagesversuche, consecutive_failed_days, erster_anruftag, letzter_anruftag, wahlversuche
+        `SELECT tagesversuche, consecutive_failed_days, erster_anruftag, letzter_anruftag, wahlversuche, auftragstyp
          FROM entries WHERE praxedo_id = $1`,
         [praxedo_id]
       );
       if (!rows.length) return NextResponse.json({ error: 'Eintrag nicht gefunden.' }, { status: 404 });
 
-      let { tagesversuche, consecutive_failed_days, erster_anruftag, wahlversuche } = rows[0];
+      let { tagesversuche, consecutive_failed_days, erster_anruftag, wahlversuche, auftragstyp } = rows[0];
+
+      const erkrankt = (auftragstyp ?? '').toLowerCase().includes('erkrankt');
 
       // Tageswechsel erkennen → tagesversuche zurücksetzen
       const letzter = rows[0].letzter_anruftag
@@ -71,11 +73,20 @@ export async function POST(req: NextRequest) {
 
       const ersterAnruftag  = erster_anruftag ?? today;
       const tageVergangen   = Math.floor((now.getTime() - new Date(ersterAnruftag).getTime()) / 86400000);
-      const maxTageErreicht = tageVergangen >= 14;
+      const maxTage         = erkrankt ? 2 : 14;
+      const maxTageErreicht = tageVergangen >= maxTage;
 
       const neueWahlversuche  = (wahlversuche ?? 0) + 1;
       const neueTagesversuche = (tagesversuche ?? 0) + 1;
-      const maxHeute          = (consecutive_failed_days ?? 0) >= 3 ? 2 : 3;
+
+      // Erkrankt: Tag 1 → max 8, Tag 2 → max 4
+      // Regulär: immer max 3 (ab consecutive >= 3: max 2)
+      let maxHeute: number;
+      if (erkrankt) {
+        maxHeute = (consecutive_failed_days ?? 0) === 0 ? 8 : 4;
+      } else {
+        maxHeute = (consecutive_failed_days ?? 0) >= 3 ? 2 : 3;
+      }
 
       let callbackTime: Date;
       let neueConsecutive    = consecutive_failed_days ?? 0;
@@ -86,9 +97,15 @@ export async function POST(req: NextRequest) {
         neueConsecutive    = (consecutive_failed_days ?? 0) + 1;
         resetTagesversuche = 0;
       } else {
-        const minuten = (consecutive_failed_days ?? 0) === 0
-          ? (neueTagesversuche === 1 ? 90 : 120)
-          : 300;
+        // Erkrankt: zufällig 45–60 Min | Regulär Tag 1: 90/120 Min | ab Tag 2: 300 Min
+        let minuten: number;
+        if (erkrankt) {
+          minuten = Math.floor(Math.random() * 16) + 45; // 45–60
+        } else if ((consecutive_failed_days ?? 0) === 0) {
+          minuten = neueTagesversuche === 1 ? 90 : 120;
+        } else {
+          minuten = 300;
+        }
         callbackTime = new Date(now.getTime() + minuten * 60 * 1000);
       }
 

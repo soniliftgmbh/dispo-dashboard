@@ -20,11 +20,12 @@ function toInputDT(s: string | null) {
 
 // ── STATUS CONFIG ─────────────────────────────────────────────
 const COL_CONFIG: { id: Status; label: string; dot: string; count: string }[] = [
-  { id: 'neu',        label: 'Neu',       dot: 'bg-gray-400',    count: 'bg-gray-100 text-gray-500' },
-  { id: 'bereit',     label: 'Bereit',    dot: 'bg-blue-500',    count: 'bg-blue-50 text-blue-600' },
-  { id: 'in_kontakt', label: 'In Kontakt',dot: 'bg-amber-500',   count: 'bg-amber-50 text-amber-600' },
-  { id: 'ruckruf',    label: 'Rückruf',   dot: 'bg-purple-500',  count: 'bg-purple-50 text-purple-600' },
-  { id: 'uebergeben', label: 'Übergeben', dot: 'bg-brand-500',   count: 'bg-brand-50 text-brand-700' },
+  { id: 'neu',        label: 'Neu',        dot: 'bg-gray-400',   count: 'bg-gray-100 text-gray-500' },
+  { id: 'bereit',     label: 'Bereit',     dot: 'bg-blue-500',   count: 'bg-blue-50 text-blue-600' },
+  { id: 'in_kontakt', label: 'In Kontakt', dot: 'bg-amber-500',  count: 'bg-amber-50 text-amber-600' },
+  { id: 'ruckruf',    label: 'Rückruf',    dot: 'bg-purple-500', count: 'bg-purple-50 text-purple-600' },
+  { id: 'uebergeben', label: 'Übergeben',  dot: 'bg-brand-500',  count: 'bg-brand-50 text-brand-700' },
+  { id: 'erkrankt',   label: 'Erkrankt',   dot: 'bg-red-500',    count: 'bg-red-50 text-red-600' },
 ];
 
 // ── BADGE ─────────────────────────────────────────────────────
@@ -149,9 +150,10 @@ export default function Dashboard() {
   const [detailTelefon, setDetailTelefon] = useState('');
 
   // — New Entry Modal
-  const [showNew,    setShowNew]    = useState(false);
-  const [newId,      setNewId]      = useState('');
-  const [newLoading, setNewLoading] = useState(false);
+  const [showNew,      setShowNew]      = useState(false);
+  const [newId,        setNewId]        = useState('');
+  const [newErkrankt,  setNewErkrankt]  = useState(false);
+  const [newLoading,   setNewLoading]   = useState(false);
 
   // — Admin form
   const [newUser, setNewUser] = useState({ username: '', password: '', role: 'user' });
@@ -206,10 +208,10 @@ export default function Dashboard() {
     try {
       await api('/api/entries', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ praxedoId: newId.trim() }),
+        body: JSON.stringify({ praxedoId: newId.trim(), erkrankt: newErkrankt }),
       });
       toast(`ID ${newId} eingetragen.`, 'success');
-      setShowNew(false); setNewId('');
+      setShowNew(false); setNewId(''); setNewErkrankt(false);
       loadEntries(); loadStats();
     } catch (e) { if (e instanceof Error) toast(e.message, 'error'); }
     finally { setNewLoading(false); }
@@ -566,7 +568,21 @@ export default function Dashboard() {
               onKeyDown={e => e.key === 'Enter' && submitNew()}
               placeholder="123456" autoFocus
             />
-            <div className="mt-4 p-3.5 bg-brand-50 border border-brand-100 rounded-xl text-xs text-brand-700 flex gap-2">
+            {/* Erkrankt Toggle */}
+            <div
+              onClick={() => setNewErkrankt(v => !v)}
+              className={`mt-4 flex items-center gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition ${newErkrankt ? 'bg-red-50 border-red-400' : 'bg-gray-50 border-gray-200 hover:border-gray-300'}`}
+            >
+              <div className={`w-10 h-6 rounded-full flex items-center transition-colors ${newErkrankt ? 'bg-red-500' : 'bg-gray-300'}`}>
+                <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform mx-0.5 ${newErkrankt ? 'translate-x-4' : ''}`} />
+              </div>
+              <div>
+                <div className={`text-sm font-semibold ${newErkrankt ? 'text-red-700' : 'text-gray-600'}`}>Techniker erkrankt</div>
+                <div className="text-xs text-gray-400">Andere Anruflogik — 2 Tage, alle 45–60 Min</div>
+              </div>
+            </div>
+
+            <div className="mt-3 p-3.5 bg-brand-50 border border-brand-100 rounded-xl text-xs text-brand-700 flex gap-2">
               <span className="material-icons-round text-brand-500 text-[15px] mt-0.5">info</span>
               <span>Die Automation holt automatisch alle Kundendaten aus Praxedo. Anna startet den Anruf beim nächsten Durchlauf.</span>
             </div>

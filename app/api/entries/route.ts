@@ -22,17 +22,21 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const session = await requireSession();
-    const { praxedoId } = await req.json();
+    const { praxedoId, erkrankt } = await req.json();
     if (!praxedoId) return NextResponse.json({ error: 'Praxedo ID fehlt.' }, { status: 400 });
 
+    // Präfix aus praxedo_id extrahieren (WARTUNG / DEMONTAGE / STÖRUNG)
+    const prefix      = String(praxedoId).split('-')[0] ?? '';
+    const auftragstyp = erkrankt ? `${prefix} erkrankt` : null;
+
     const result = await pool.query<Entry>(
-      `INSERT INTO entries (praxedo_id, erstellungsdatum, added_by)
-       VALUES ($1, NOW(), $2)
+      `INSERT INTO entries (praxedo_id, auftragstyp, erstellungsdatum, added_by)
+       VALUES ($1, $2, NOW(), $3)
        RETURNING *`,
-      [String(praxedoId), session.username]
+      [String(praxedoId), auftragstyp, session.username]
     );
 
-    await addLog(session.username, 'NEUER_EINTRAG', `ID: ${praxedoId}`);
+    await addLog(session.username, 'NEUER_EINTRAG', `ID: ${praxedoId}${erkrankt ? ' [ERKRANKT]' : ''}`);
 
     // Make-Webhook für Praxedo-Anreicherung triggern
     const webhookUrl = process.env.MAKE_ENRICHMENT_WEBHOOK;
@@ -40,7 +44,7 @@ export async function POST(req: NextRequest) {
       fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ praxedoId, entryId: result.rows[0].id, addedBy: session.username, timestamp: new Date().toISOString() }),
+        body: JSON.stringify({ praxedoId, entryId: result.rows[0].id, erkrankt: !!erkrankt, addedBy: session.username, timestamp: new Date().toISOString() }),
       }).catch(() => {});
     }
 
