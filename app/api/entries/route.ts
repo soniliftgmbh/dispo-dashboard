@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ praxedoId, addedBy: session.username, timestamp: new Date().toISOString() }),
+        body: JSON.stringify({ praxedoId, entryId: result.rows[0].id, addedBy: session.username, timestamp: new Date().toISOString() }),
       }).catch(() => {});
     }
 
