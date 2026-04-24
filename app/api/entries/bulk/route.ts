@@ -47,10 +47,16 @@ export async function POST(req: NextRequest) {
 
         const auftragstyp = auftragsTypFromId(rawId);
 
+        // Bestehenden nicht-archivierten Eintrag archivieren (Option A: sauberer Neustart)
+        await pool.query(
+          `UPDATE entries SET archived = true, updated_at = NOW()
+           WHERE praxedo_id = $1 AND archived = false`,
+          [rawId]
+        );
+
         const insertResult = await pool.query(
           `INSERT INTO entries (praxedo_id, erkrankt, board_type, auftragstyp, erstellungsdatum, added_by)
            VALUES ($1, $2, $3, $4, NOW(), $5)
-           ON CONFLICT (praxedo_id) DO UPDATE SET updated_at = updated_at
            RETURNING id`,
           [rawId, !!erkrankt, detectedBoard, auftragstyp, session.username]
         );
@@ -58,9 +64,8 @@ export async function POST(req: NextRequest) {
 
         results.push({ id: rawId, ok: true });
 
-        // Make-Anreicherungs-Webhook für jede ID triggern
         const webhookUrl = process.env.MAKE_ENRICHMENT_WEBHOOK;
-        if (webhookUrl) {
+        if (entryId && webhookUrl) {
           fetch(webhookUrl, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -68,7 +73,7 @@ export async function POST(req: NextRequest) {
           }).catch(() => {});
         }
       } catch {
-        results.push({ id: rawId, ok: false, error: 'Bereits vorhanden oder DB-Fehler' });
+        results.push({ id: rawId, ok: false, error: 'DB-Fehler beim Eintragen' });
       }
     }
 

@@ -1,5 +1,5 @@
 export type Role      = 'admin' | 'user' | 'power_user';
-export type Status    = 'ausstehend' | 'aktiv' | 'nacharbeiten' | 'bestaetigt' | 'final';
+export type Status    = 'ausstehend' | 'aktiv' | 'nacharbeiten' | 'abgebrochen' | 'bestaetigt' | 'final';
 export type BoardType = 'neuinstallation' | 'reklamation' | 'wartung';
 
 // Berechtigungen
@@ -32,7 +32,7 @@ export interface Entry {
   erkrankt:             boolean;
   notiz:                string | null;
   // Outcome-Status (gesetzt durch post_call Webhook)
-  outcome:              'bestaetigt' | 'nacharbeiten' | null;
+  outcome:              'bestaetigt' | 'nacharbeiten' | 'abgebrochen' | null;
   nacharbeiten_abschluss: string | null;
   // Board
   board_type:           BoardType | null;
@@ -141,6 +141,7 @@ export function deriveStatus(e: Entry): Status {
   if (e.is_calling)                   return 'aktiv';
   if (e.outcome === 'bestaetigt')     return 'bestaetigt';
   if (e.outcome === 'nacharbeiten')   return 'nacharbeiten';
+  if (e.outcome === 'abgebrochen')    return 'abgebrochen';
   return 'ausstehend';
 }
 

@@ -49,10 +49,11 @@ function Toast({ t }: { t: ToastMsg }) {
 
 // ── COLUMN CONFIG ─────────────────────────────────────────────
 const COL_CONFIG: { id: Status; label: string; dot: string; count: string }[] = [
-  { id: 'ausstehend',  label: 'Ausstehend',  dot: 'bg-gray-400',   count: 'bg-gray-100 text-gray-600' },
-  { id: 'aktiv',       label: 'Aktiv',       dot: 'bg-blue-500',   count: 'bg-blue-50 text-blue-700' },
-  { id: 'nacharbeiten',label: 'Nacharbeiten',dot: 'bg-amber-500',  count: 'bg-amber-50 text-amber-700' },
-  { id: 'bestaetigt',  label: 'Bestätigt',   dot: 'bg-green-500',  count: 'bg-green-50 text-green-700' },
+  { id: 'ausstehend',  label: 'Ausstehend',       dot: 'bg-gray-400',   count: 'bg-gray-100 text-gray-600' },
+  { id: 'aktiv',       label: 'Aktiv',             dot: 'bg-blue-500',   count: 'bg-blue-50 text-blue-700' },
+  { id: 'nacharbeiten',label: 'Nacharbeiten',      dot: 'bg-amber-500',  count: 'bg-amber-50 text-amber-700' },
+  { id: 'abgebrochen', label: 'Abgebrochen',       dot: 'bg-red-500',    count: 'bg-red-50 text-red-700' },
+  { id: 'bestaetigt',  label: 'Termin bestätigt',  dot: 'bg-green-500',  count: 'bg-green-50 text-green-700' },
 ];
 
 // ── SUBTYPE BADGE (Reklamation) ───────────────────────────────
@@ -149,11 +150,19 @@ function KanbanCard({
         </div>
       )}
 
-      {/* Nacharbeiten-Grund */}
-      {entry.status === 'nacharbeiten' && entry.abbruchgrund && (
-        <div className="mt-2 flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 rounded px-2 py-1">
-          <span className="material-icons-round" style={{fontSize:12}}>warning</span>
-          {entry.abbruchgrund}
+      {/* Nacharbeiten-Abschlussgrund */}
+      {entry.status === 'nacharbeiten' && entry.nacharbeiten_abschluss && (
+        <div className="mt-2 flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-100 rounded px-2 py-1">
+          <span className="material-icons-round" style={{fontSize:12}}>assignment_late</span>
+          {entry.nacharbeiten_abschluss}
+        </div>
+      )}
+
+      {/* Letzter Fehlergrund */}
+      {entry.failure_reason && entry.status === 'ausstehend' && (
+        <div className="mt-2 flex items-center gap-1 text-xs text-gray-400 bg-gray-50 rounded px-2 py-1">
+          <span className="material-icons-round" style={{fontSize:12}}>phone_missed</span>
+          <span className="truncate">{entry.failure_reason}</span>
         </div>
       )}
     </div>
@@ -255,6 +264,7 @@ export default function Dashboard() {
   const [newErkrankt,  setNewErkrankt]  = useState(false);
   const [newLoading,   setNewLoading]   = useState(false);
   const [bulkRaw,      setBulkRaw]      = useState('');
+  const [bulkErkrankt, setBulkErkrankt] = useState(false);
   const [bulkLoading,  setBulkLoading]  = useState(false);
   const [bulkResult,   setBulkResult]   = useState<null | { summary: { total: number; imported: number; failed: number }; results: { id: string; ok: boolean; error?: string }[] }>(null);
 
@@ -409,7 +419,7 @@ export default function Dashboard() {
       const data = await api<{ results: { id: string; ok: boolean; error?: string }[]; summary: { total: number; imported: number; failed: number } }>(
         '/api/entries/bulk',
         { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ raw: bulkRaw, board: selectedBoard }) }
+          body: JSON.stringify({ raw: bulkRaw, board: selectedBoard, erkrankt: bulkErkrankt }) }
       );
       setBulkResult(data);
       loadEntries(); loadStats();
@@ -476,7 +486,7 @@ export default function Dashboard() {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'cancel' }),
       });
-      toast('Kontakt abgebrochen → Nacharbeiten.', 'info');
+      toast('Kontakt abgebrochen.', 'info');
       setDetailEntry(null); loadEntries(); loadStats();
     } catch (e) { if (e instanceof Error) toast(e.message, 'error'); }
   }
@@ -1278,12 +1288,12 @@ export default function Dashboard() {
 
       {/* ── MODAL: BULK IMPORT ───────────────────────────────── */}
       {showBulk && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center" onClick={e => e.target === e.currentTarget && (setShowBulk(false), setBulkResult(null), setBulkRaw(''))}>
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center" onClick={e => e.target === e.currentTarget && (setShowBulk(false), setBulkResult(null), setBulkRaw(''), setBulkErkrankt(false))}>
           <div className="bg-white rounded-2xl p-7 w-[560px] shadow-2xl border border-gray-100">
             <div className="flex items-center gap-2.5 mb-6">
               <span className="material-icons-round text-brand-500">playlist_add</span>
               <h3 className="text-lg font-bold">Bulk Import — {boardLabel(selectedBoard)}</h3>
-              <button onClick={() => { setShowBulk(false); setBulkResult(null); setBulkRaw(''); }} className="ml-auto p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
+              <button onClick={() => { setShowBulk(false); setBulkResult(null); setBulkRaw(''); setBulkErkrankt(false); }} className="ml-auto p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition">
                 <span className="material-icons-round">close</span>
               </button>
             </div>
@@ -1299,8 +1309,25 @@ export default function Dashboard() {
                   onChange={e => setBulkRaw(e.target.value)}
                 />
                 <p className="text-xs text-gray-400 mt-2">IDs werden nach Zeilenumbruch, Tab oder Komma aufgeteilt. Der Auftragstyp wird automatisch aus der ID erkannt.</p>
+
+                {/* Erkrankt Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setBulkErkrankt(v => !v)}
+                  className={`mt-4 flex items-center gap-2.5 px-4 py-2.5 rounded-xl border-2 text-sm font-semibold transition w-full
+                    ${bulkErkrankt
+                      ? 'border-red-300 bg-red-50 text-red-700'
+                      : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300'}`}
+                >
+                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-colors ${bulkErkrankt ? 'bg-red-500 border-red-500' : 'border-gray-300 bg-white'}`}>
+                    {bulkErkrankt && <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 12 12"><path d="M2 6l3 3 5-5"/></svg>}
+                  </div>
+                  <span className="material-icons-round text-[16px]">sick</span>
+                  Techniker erkrankt — gilt für alle IDs in dieser Eingabe
+                </button>
+
                 <div className="flex justify-end gap-2 mt-5">
-                  <button onClick={() => { setShowBulk(false); setBulkRaw(''); }} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 transition">Abbrechen</button>
+                  <button onClick={() => { setShowBulk(false); setBulkRaw(''); setBulkErkrankt(false); }} className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 transition">Abbrechen</button>
                   <button onClick={submitBulk} disabled={bulkLoading} className="flex items-center gap-1.5 px-5 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-sm font-semibold shadow shadow-brand-500/20 transition disabled:opacity-60">
                     {bulkLoading ? 'Wird importiert…' : <><span className="material-icons-round text-[16px]">upload</span> Importieren</>}
                   </button>
@@ -1537,7 +1564,7 @@ export default function Dashboard() {
             </div>
 
             {/* Danger Zone */}
-            {detailEntry.status !== 'bestaetigt' && (
+            {!['bestaetigt', 'abgebrochen'].includes(detailEntry.status ?? '') && (
               <div className="mb-5 p-4 bg-red-50 border border-red-100 rounded-xl">
                 <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-red-500 mb-1.5">
                   <span className="material-icons-round text-[14px]">warning</span> Aktionen

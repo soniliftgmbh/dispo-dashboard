@@ -72,12 +72,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       return NextResponse.json({ ok: true });
     }
 
-    // Manuell abbrechen → outcome = 'nacharbeiten', abbruchgrund gesetzt
+    // Manuell abbrechen → outcome = 'abgebrochen'
     if (action === 'cancel') {
       const result = await pool.query<Entry>(
         `UPDATE entries
-         SET outcome      = 'nacharbeiten',
+         SET outcome      = 'abgebrochen',
              abbruchgrund = 'manuell abgebrochen',
+             is_calling   = false,
              updated_at   = NOW()
          WHERE id = $1
          RETURNING *`,
