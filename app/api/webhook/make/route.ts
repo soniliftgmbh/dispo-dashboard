@@ -14,6 +14,40 @@ function nextWorkday8am(): Date {
   return d;
 }
 
+// Rufnummer auf E.164 (+49...) normalisieren
+function normalizePhone(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+
+  // Alle Annotationen in Klammern entfernen — auch mitten in der Nummer
+  let s = raw.replace(/\(.*?\)/g, '');
+
+  // Alles außer Ziffern und + entfernen
+  s = s.replace(/[^\d+]/g, '');
+
+  if (!s) return null;
+
+  // Führendes + entfernen (wird am Ende wieder gesetzt)
+  let digits = s.startsWith('+') ? s.slice(1) : s;
+
+  // Länderkennzahl normalisieren
+  if (digits.startsWith('0049')) {
+    digits = digits.slice(4);
+  } else if (digits.startsWith('049') && digits.length >= 12) {
+    // Häufiger Eingabefehler: 049 statt 0049 (z.B. 04917612345678)
+    // Nur als Ländervorwahl behandeln wenn genug Stellen für eine Mobilnummer
+    digits = digits.slice(3);
+  } else if (digits.startsWith('49') && digits.length >= 11) {
+    digits = digits.slice(2);
+  } else if (digits.startsWith('0')) {
+    digits = digits.slice(1);
+  }
+
+  // Weniger als 7 Stellen → wahrscheinlich ungültig
+  if (digits.length < 7) return null;
+
+  return '+49' + digits;
+}
+
 // Anruflogik-Einstellungen aus settings-Tabelle laden
 async function loadCallSettings() {
   const { rows } = await pool.query(
@@ -52,8 +86,8 @@ export async function POST(req: NextRequest) {
     // ── TYP 1: Praxedo-Anreicherung ──────────────────────────
     if (type === 'enrich') {
       const { kundenname, telefon, email, termin, zeitraum, techniker } = body;
-      // auftragstyp immer aus ID ableiten — nie aus dem Webhook überschreiben
-      const auftragstyp = auftragsTypFromId(praxedo_id);
+      const auftragstyp    = auftragsTypFromId(praxedo_id);
+      const telefonClean   = normalizePhone(telefon);
       await pool.query(
         `UPDATE entries SET
            kundenname  = $1,
@@ -65,9 +99,9 @@ export async function POST(req: NextRequest) {
            auftragstyp = $7,
            updated_at  = NOW()
          WHERE praxedo_id = $8`,
-        [kundenname, telefon, email, termin || null, zeitraum, techniker, auftragstyp, praxedo_id]
+        [kundenname, telefonClean, email, termin || null, zeitraum, techniker, auftragstyp, praxedo_id]
       );
-      await addLog('make-webhook', 'ANGEREICHERT', `ID: ${praxedo_id} → ${kundenname}`);
+      await addLog('make-webhook', 'ANGEREICHERT', `ID: ${praxedo_id} → ${kundenname} | Tel: ${telefon} → ${telefonClean}`);
       return NextResponse.json({ ok: true });
     }
 
