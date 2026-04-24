@@ -47,12 +47,14 @@ export async function POST(req: NextRequest) {
 
         const auftragstyp = auftragsTypFromId(rawId);
 
-        await pool.query(
+        const insertResult = await pool.query(
           `INSERT INTO entries (praxedo_id, erkrankt, board_type, auftragstyp, erstellungsdatum, added_by)
            VALUES ($1, $2, $3, $4, NOW(), $5)
-           ON CONFLICT (praxedo_id) DO NOTHING`,
+           ON CONFLICT (praxedo_id) DO UPDATE SET updated_at = updated_at
+           RETURNING id`,
           [rawId, !!erkrankt, detectedBoard, auftragstyp, session.username]
         );
+        const entryId = insertResult.rows[0]?.id ?? null;
 
         results.push({ id: rawId, ok: true });
 
@@ -62,7 +64,7 @@ export async function POST(req: NextRequest) {
           fetch(webhookUrl, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ praxedoId: rawId, erkrankt: !!erkrankt, addedBy: session.username, timestamp: new Date().toISOString() }),
+            body:    JSON.stringify({ praxedoId: rawId, entryId, erkrankt: !!erkrankt, addedBy: session.username, timestamp: new Date().toISOString() }),
           }).catch(() => {});
         }
       } catch {
