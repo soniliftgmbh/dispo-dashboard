@@ -653,6 +653,27 @@ export default function Dashboard() {
               ))}
             </div>
 
+            {/* KI-Analyse */}
+            {(detailEntry.ki_notiz || detailEntry.ki_grund) && (
+              <div className="mb-5">
+                <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2.5">KI-Gesprächsanalyse</p>
+                <div className="rounded-xl border border-blue-100 bg-blue-50 divide-y divide-blue-100 overflow-hidden">
+                  {detailEntry.ki_notiz && (
+                    <div className="px-4 py-3">
+                      <div className="text-xs font-semibold text-blue-500 uppercase tracking-wide mb-1">Gesprächsnotiz</div>
+                      <div className="text-sm text-gray-700">{detailEntry.ki_notiz}</div>
+                    </div>
+                  )}
+                  {detailEntry.ki_grund && (
+                    <div className="px-4 py-3">
+                      <div className="text-xs font-semibold text-blue-500 uppercase tracking-wide mb-1">Grund / Anliegen</div>
+                      <div className="text-sm text-gray-700">{detailEntry.ki_grund}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Notiz */}
             <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Interne Notiz</p>
             <textarea className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition mb-4"

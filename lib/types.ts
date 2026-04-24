@@ -21,6 +21,8 @@ export interface Entry {
   auftragstyp:          string | null;
   erkrankt:             boolean;
   notiz:                string | null;
+  ki_notiz:             string | null;
+  ki_grund:             string | null;
   erstellungsdatum:     string | null;
   archived:             boolean;
   created_at:           string;

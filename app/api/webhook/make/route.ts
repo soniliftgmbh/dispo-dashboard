@@ -169,18 +169,20 @@ export async function POST(req: NextRequest) {
     // confirmed | alternative_proposed | alternative_suggestion | declined
     // Setzt dispo_info → Kontakt verschwindet aus entries_ready
     if (type === 'post_call') {
-      const { status, note, direction } = body;
+      const { status, note, direction, ki_notiz, ki_grund } = body;
 
       await pool.query(
         `UPDATE entries SET
            dispo_info   = '-',
            abbruchgrund = $1,
            notiz        = COALESCE($2, notiz),
+           ki_notiz     = COALESCE($3, ki_notiz),
+           ki_grund     = COALESCE($4, ki_grund),
            updated_at   = NOW()
-         WHERE praxedo_id = $3`,
-        [status ?? null, note ?? null, praxedo_id]
+         WHERE praxedo_id = $5`,
+        [status ?? null, note ?? null, ki_notiz ?? null, ki_grund ?? null, praxedo_id]
       );
-      await addLog('make-webhook', 'ABSCHLUSS', `ID: ${praxedo_id} | ${status} | ${direction ?? ''}`);
+      await addLog('make-webhook', 'ABSCHLUSS', `ID: ${praxedo_id} | ${status} | ${direction ?? ''} | ${note ?? ''}`);
       return NextResponse.json({ ok: true });
     }
 
