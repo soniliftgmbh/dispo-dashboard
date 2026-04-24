@@ -1,20 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool, { addLog } from '@/lib/db';
-
-// Make ruft diesen Endpoint auf — statt direkt ins Google Sheet zu schreiben
-// Authorization: Bearer {WEBHOOK_SECRET}
+import { deriveBoard, auftragsTypFromId } from '@/lib/types';
 
 function unauthorized() {
   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 }
 
-// Nächsten Werktag 08:00 Uhr berechnen (überspringt Sonntage)
 function nextWorkday8am(): Date {
   const d = new Date();
   d.setDate(d.getDate() + 1);
   d.setHours(8, 0, 0, 0);
   if (d.getDay() === 0) d.setDate(d.getDate() + 1);
   return d;
+}
+
+// Anruflogik-Einstellungen aus settings-Tabelle laden
+async function loadCallSettings() {
+  const { rows } = await pool.query(
+    `SELECT key, value FROM settings WHERE key LIKE 'regular_%' OR key LIKE 'erkrankt_%'`
+  );
+  const s: Record<string, number> = {};
+  for (const row of rows) s[row.key] = parseInt(row.value, 10);
+  return {
+    regular: {
+      maxDays:          s['regular_max_days']            ?? 14,
+      maxPerDayEarly:   s['regular_max_per_day_early']   ?? 3,
+      maxPerDayLate:    s['regular_max_per_day_late']    ?? 2,
+      intervalFirstMin: s['regular_interval_first_min']  ?? 90,
+      intervalSecondMin:s['regular_interval_second_min'] ?? 120,
+      intervalLateMin:  s['regular_interval_late_min']   ?? 300,
+    },
+    erkrankt: {
+      maxDays:      s['erkrankt_max_days']         ?? 2,
+      maxDay1:      s['erkrankt_max_day1']          ?? 8,
+      maxDay2:      s['erkrankt_max_day2']          ?? 4,
+      intervalMin:  s['erkrankt_interval_min_min']  ?? 45,
+      intervalMax:  s['erkrankt_interval_max_min']  ?? 60,
+    },
+  };
 }
 
 export async function POST(req: NextRequest) {
@@ -28,7 +51,9 @@ export async function POST(req: NextRequest) {
 
     // ── TYP 1: Praxedo-Anreicherung ──────────────────────────
     if (type === 'enrich') {
-      const { kundenname, telefon, email, termin, zeitraum, techniker, auftragstyp } = body;
+      const { kundenname, telefon, email, termin, zeitraum, techniker } = body;
+      // auftragstyp immer aus ID ableiten — nie aus dem Webhook überschreiben
+      const auftragstyp = auftragsTypFromId(praxedo_id);
       await pool.query(
         `UPDATE entries SET
            kundenname  = $1,
@@ -46,12 +71,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // ── TYP 2: Fehlgeschlagener Anrufversuch ─────────────────
-    // Kein Gespräch — failure_reason: voicemail | busy | no-answer
-    // Gesamte Timing-Logik läuft hier
+    // ── TYP 2: Anruf gestartet (von Make-Trigger-Automation) ─
+    // Setzt is_calling = true + letzter_wahlversuch = NOW()
+    if (type === 'call_started') {
+      await pool.query(
+        `UPDATE entries SET
+           is_calling          = true,
+           letzter_wahlversuch = NOW(),
+           updated_at          = NOW()
+         WHERE praxedo_id = $1`,
+        [praxedo_id]
+      );
+      // Letzte Anrufschleife in Settings tracken
+      await pool.query(
+        `INSERT INTO settings (key, value) VALUES ('last_call_run', $1)
+         ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = NOW()`,
+        [new Date().toISOString()]
+      );
+      return NextResponse.json({ ok: true });
+    }
+
+    // ── TYP 3: Fehlgeschlagener Anrufversuch ─────────────────
     if (type === 'failed_attempt') {
       const { failure_reason } = body;
-      const now = new Date();
+      const now   = new Date();
       const today = now.toISOString().slice(0, 10);
 
       const { rows } = await pool.query(
@@ -62,30 +105,29 @@ export async function POST(req: NextRequest) {
       if (!rows.length) return NextResponse.json({ error: 'Eintrag nicht gefunden.' }, { status: 404 });
 
       let { tagesversuche, consecutive_failed_days, erster_anruftag, wahlversuche } = rows[0];
-
       const erkrankt = rows[0].erkrankt === true;
 
-      // Tageswechsel erkennen → tagesversuche zurücksetzen
       const letzter = rows[0].letzter_anruftag
         ? new Date(rows[0].letzter_anruftag).toISOString().slice(0, 10)
         : null;
       if (letzter && letzter !== today) tagesversuche = 0;
 
+      const cs = await loadCallSettings();
+      const cfg = erkrankt ? cs.erkrankt : cs.regular;
+
       const ersterAnruftag  = erster_anruftag ?? today;
       const tageVergangen   = Math.floor((now.getTime() - new Date(ersterAnruftag).getTime()) / 86400000);
-      const maxTage         = erkrankt ? 2 : 14;
+      const maxTage         = erkrankt ? cs.erkrankt.maxDays : cs.regular.maxDays;
       const maxTageErreicht = tageVergangen >= maxTage;
 
       const neueWahlversuche  = (wahlversuche ?? 0) + 1;
       const neueTagesversuche = (tagesversuche ?? 0) + 1;
 
-      // Erkrankt: Tag 1 → max 8, Tag 2 → max 4
-      // Regulär: immer max 3 (ab consecutive >= 3: max 2)
       let maxHeute: number;
       if (erkrankt) {
-        maxHeute = (consecutive_failed_days ?? 0) === 0 ? 8 : 4;
+        maxHeute = (consecutive_failed_days ?? 0) === 0 ? cs.erkrankt.maxDay1 : cs.erkrankt.maxDay2;
       } else {
-        maxHeute = (consecutive_failed_days ?? 0) >= 3 ? 2 : 3;
+        maxHeute = (consecutive_failed_days ?? 0) >= 3 ? cs.regular.maxPerDayLate : cs.regular.maxPerDayEarly;
       }
 
       let callbackTime: Date;
@@ -97,60 +139,52 @@ export async function POST(req: NextRequest) {
         neueConsecutive    = (consecutive_failed_days ?? 0) + 1;
         resetTagesversuche = 0;
       } else {
-        // Erkrankt: zufällig 45–60 Min | Regulär Tag 1: 90/120 Min | ab Tag 2: 300 Min
         let minuten: number;
         if (erkrankt) {
-          minuten = Math.floor(Math.random() * 16) + 45; // 45–60
+          const range = cs.erkrankt.intervalMax - cs.erkrankt.intervalMin + 1;
+          minuten = Math.floor(Math.random() * range) + cs.erkrankt.intervalMin;
         } else if ((consecutive_failed_days ?? 0) === 0) {
-          minuten = neueTagesversuche === 1 ? 90 : 120;
+          minuten = neueTagesversuche === 1 ? cs.regular.intervalFirstMin : cs.regular.intervalSecondMin;
         } else {
-          minuten = 300;
+          minuten = cs.regular.intervalLateMin;
         }
         callbackTime = new Date(now.getTime() + minuten * 60 * 1000);
       }
 
       await pool.query(
         `UPDATE entries SET
+           is_calling              = false,
            wahlversuche            = $1,
            tagesversuche           = $2,
            consecutive_failed_days = $3,
            erster_anruftag         = COALESCE(erster_anruftag, $4::date),
            letzter_anruftag        = $5::date,
+           letzter_wahlversuch     = NOW(),
            callback_time           = $6,
            failure_reason          = $7,
            dispo_required          = CASE WHEN $9 THEN true ELSE dispo_required END,
            updated_at              = NOW()
          WHERE praxedo_id = $8`,
         [
-          neueWahlversuche,
-          resetTagesversuche,
-          neueConsecutive,
-          ersterAnruftag,
-          today,
-          callbackTime.toISOString(),
-          failure_reason ?? null,
-          praxedo_id,
-          maxTageErreicht,
+          neueWahlversuche, resetTagesversuche, neueConsecutive,
+          ersterAnruftag, today, callbackTime.toISOString(),
+          failure_reason ?? null, praxedo_id, maxTageErreicht,
         ]
       );
-
-      await addLog(
-        'make-webhook',
-        'FEHLVERSUCH',
+      await addLog('make-webhook', 'FEHLVERSUCH',
         `ID: ${praxedo_id} | ${failure_reason} | Tag ${neueConsecutive}, Versuch ${neueTagesversuche}/${maxHeute} | nächster: ${callbackTime.toISOString()}${maxTageErreicht ? ' | DISPO REQUIRED' : ''}`
       );
       return NextResponse.json({ ok: true, next_call: callbackTime.toISOString() });
     }
 
-    // ── TYP 3: Kunden-Rückruf ────────────────────────────────
-    // Gespräch geführt — Kunde wünscht Rückruf zu festem Zeitpunkt
-    // consecutive_failed_days reset, kein Fehlversuch
+    // ── TYP 4: Kunden-Rückruf ───────────────────────────────
     if (type === 'callback_scheduled') {
       const { recall, ki_notiz, ki_naechste_aktion, ki_stimmung, ki_zusammenfassung } = body;
       if (!recall) return NextResponse.json({ error: 'recall fehlt.' }, { status: 400 });
 
       await pool.query(
         `UPDATE entries SET
+           is_calling              = false,
            callback_time           = $1::timestamptz,
            consecutive_failed_days = 0,
            tagesversuche           = 0,
@@ -168,9 +202,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    // ── TYP 4: Abschluss — an Dispo übergeben ────────────────
-    // confirmed | alternative_proposed | alternative_suggestion | declined
-    // Setzt dispo_info → Kontakt verschwindet aus entries_ready
+    // ── TYP 5: Post-Call — Ergebnis ──────────────────────────
+    // status: confirmed → bestaetigt
+    // status: alternative_proposed | declined | no_data_found → nacharbeiten
+    // status: callback_requested → wie callback_scheduled
     if (type === 'post_call') {
       const {
         status, direction,
@@ -181,28 +216,41 @@ export async function POST(req: NextRequest) {
         ki_erklaerung_wiederholt, ki_zusammenfassung,
       } = body;
 
+      // Outcome bestimmen
+      let outcome: string | null = null;
+      if (status === 'confirmed') {
+        outcome = 'bestaetigt';
+      } else if (['alternative_proposed', 'alternative_suggestion', 'declined', 'no_data_found'].includes(status)) {
+        outcome = 'nacharbeiten';
+      }
+      // callback_requested → outcome bleibt null, callback_time wird gesetzt (s.u.)
+
       await pool.query(
         `UPDATE entries SET
-           dispo_info                = '-',
-           abbruchgrund              = $1,
-           ki_vorname                = COALESCE($2,  ki_vorname),
-           ki_nachname               = COALESCE($3,  ki_nachname),
-           ki_direction              = COALESCE($4,  ki_direction),
-           ki_agent                  = COALESCE($5,  ki_agent),
-           ki_termin_ergebnis        = COALESCE($6,  ki_termin_ergebnis),
-           ki_notiz                  = COALESCE($7,  ki_notiz),
-           ki_naechste_aktion        = COALESCE($8,  ki_naechste_aktion),
-           ki_stimmung               = COALESCE($9,  ki_stimmung),
-           ki_angehoeriger           = COALESCE($10, ki_angehoeriger),
-           ki_zuverlaessigkeit       = COALESCE($11, ki_zuverlaessigkeit),
-           ki_gespraechsqualitaet    = COALESCE($12, ki_gespraechsqualitaet),
-           ki_gespraechsende         = COALESCE($13, ki_gespraechsende),
-           ki_frage                  = COALESCE($14, ki_frage),
-           ki_erklaerung_wiederholt  = COALESCE($15, ki_erklaerung_wiederholt),
-           ki_zusammenfassung        = COALESCE($16, ki_zusammenfassung),
+           is_calling                = false,
+           outcome                   = COALESCE($1, outcome),
+           abbruchgrund              = $2,
+           wahlversuche              = wahlversuche + 1,
+           letzter_wahlversuch       = NOW(),
+           ki_vorname                = COALESCE($3,  ki_vorname),
+           ki_nachname               = COALESCE($4,  ki_nachname),
+           ki_direction              = COALESCE($5,  ki_direction),
+           ki_agent                  = COALESCE($6,  ki_agent),
+           ki_termin_ergebnis        = COALESCE($7,  ki_termin_ergebnis),
+           ki_notiz                  = COALESCE($8,  ki_notiz),
+           ki_naechste_aktion        = COALESCE($9,  ki_naechste_aktion),
+           ki_stimmung               = COALESCE($10, ki_stimmung),
+           ki_angehoeriger           = COALESCE($11, ki_angehoeriger),
+           ki_zuverlaessigkeit       = COALESCE($12, ki_zuverlaessigkeit),
+           ki_gespraechsqualitaet    = COALESCE($13, ki_gespraechsqualitaet),
+           ki_gespraechsende         = COALESCE($14, ki_gespraechsende),
+           ki_frage                  = COALESCE($15, ki_frage),
+           ki_erklaerung_wiederholt  = COALESCE($16, ki_erklaerung_wiederholt),
+           ki_zusammenfassung        = COALESCE($17, ki_zusammenfassung),
            updated_at                = NOW()
-         WHERE praxedo_id = $17`,
+         WHERE praxedo_id = $18`,
         [
+          outcome,
           status ?? null,
           ki_vorname ?? null, ki_nachname ?? null, ki_direction ?? null, ki_agent ?? null,
           ki_termin_ergebnis ?? null, ki_notiz ?? null, ki_naechste_aktion ?? null,

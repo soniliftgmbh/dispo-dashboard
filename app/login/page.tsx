@@ -19,8 +19,14 @@ export default function LoginPage() {
         body: JSON.stringify({ username, password }),
       });
       const data = await res.json();
-      if (res.ok) router.push('/dashboard');
-      else setError(data.error ?? 'Anmeldung fehlgeschlagen.');
+      if (res.ok) {
+        localStorage.setItem('session_info', JSON.stringify({
+          username:    data.username,
+          role:        data.role,
+          permissions: data.permissions ?? [],
+        }));
+        router.push('/dashboard');
+      } else setError(data.error ?? 'Anmeldung fehlgeschlagen.');
     } catch { setError('Netzwerkfehler.'); }
     finally   { setLoading(false); }
   }

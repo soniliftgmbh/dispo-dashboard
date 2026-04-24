@@ -1,12 +1,13 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
-import { Role } from './types';
+import { Role, Permission } from './types';
 
 export interface SessionPayload {
-  username: string;
-  role:     Role;
-  iat?:     number;
-  exp?:     number;
+  username:    string;
+  role:        Role;
+  permissions: string[];
+  iat?:        number;
+  exp?:        number;
 }
 
 function secret() {
@@ -26,7 +27,10 @@ export async function getSession(): Promise<SessionPayload | null> {
     const token = cookies().get('session')?.value;
     if (!token) return null;
     const { payload } = await jwtVerify(token, secret());
-    return payload as unknown as SessionPayload;
+    const p = payload as unknown as SessionPayload;
+    // Rückwärtskompatibilität: alte Sessions ohne permissions-Feld
+    if (!p.permissions) p.permissions = [];
+    return p;
   } catch {
     return null;
   }
@@ -42,4 +46,23 @@ export async function requireAdmin(): Promise<SessionPayload> {
   const session = await requireSession();
   if (session.role !== 'admin') throw new Error('Keine Berechtigung');
   return session;
+}
+
+export async function requirePermission(perm: Permission): Promise<SessionPayload> {
+  const session = await requireSession();
+  if (session.role === 'admin') return session;
+  if (!session.permissions.includes(perm)) throw new Error('Keine Berechtigung');
+  return session;
+}
+
+export function canViewLogs(session: SessionPayload): boolean {
+  return session.role === 'admin' || session.permissions.includes('view:logs');
+}
+
+export function canViewArchive(session: SessionPayload): boolean {
+  return session.role === 'admin' || session.permissions.includes('view:archive');
+}
+
+export function canViewStats(session: SessionPayload): boolean {
+  return session.role === 'admin' || session.permissions.includes('view:stats');
 }

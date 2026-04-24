@@ -18,14 +18,18 @@ export async function POST(req: NextRequest) {
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return NextResponse.json({ error: 'Benutzername oder Passwort falsch.' }, { status: 401 });
 
-    // Session-Token erstellen
-    const token = await createSessionToken({ username: user.username, role: user.role });
+    // Session-Token erstellen (inkl. Permissions)
+    const token = await createSessionToken({
+      username:    user.username,
+      role:        user.role,
+      permissions: user.permissions ?? [],
+    });
 
     // last_login aktualisieren
     await pool.query('UPDATE users SET last_login = NOW() WHERE id = $1', [user.id]);
     await addLog(user.username, 'LOGIN', 'Anmeldung erfolgreich');
 
-    const res = NextResponse.json({ ok: true, username: user.username, role: user.role });
+    const res = NextResponse.json({ ok: true, username: user.username, role: user.role, permissions: user.permissions ?? [] });
     res.cookies.set('session', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

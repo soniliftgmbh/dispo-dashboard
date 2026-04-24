@@ -46,6 +46,8 @@ export async function GET(req: Request) {
          AND kundenname != ''
          AND (abbruchgrund IS NULL)
          AND (dispo_info  IS NULL OR dispo_info NOT IN ('-', 'Übergeben', 'uebergeben'))
+         AND outcome IS NULL
+         AND is_calling = false
          AND wahlversuche < $1
          AND (
            callback_time IS NULL
