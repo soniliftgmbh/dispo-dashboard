@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
     // Gespräch geführt — Kunde wünscht Rückruf zu festem Zeitpunkt
     // consecutive_failed_days reset, kein Fehlversuch
     if (type === 'callback_scheduled') {
-      const { recall, note } = body;
+      const { recall, ki_notiz, ki_naechste_aktion, ki_stimmung, ki_zusammenfassung } = body;
       if (!recall) return NextResponse.json({ error: 'recall fehlt.' }, { status: 400 });
 
       await pool.query(
@@ -156,10 +156,13 @@ export async function POST(req: NextRequest) {
            tagesversuche           = 0,
            failure_reason          = NULL,
            wahlversuche            = wahlversuche + 1,
-           notiz                   = COALESCE($2, notiz),
+           ki_notiz                = COALESCE($2, ki_notiz),
+           ki_naechste_aktion      = COALESCE($3, ki_naechste_aktion),
+           ki_stimmung             = COALESCE($4, ki_stimmung),
+           ki_zusammenfassung      = COALESCE($5, ki_zusammenfassung),
            updated_at              = NOW()
-         WHERE praxedo_id = $3`,
-        [recall, note ?? null, praxedo_id]
+         WHERE praxedo_id = $6`,
+        [recall, ki_notiz ?? null, ki_naechste_aktion ?? null, ki_stimmung ?? null, ki_zusammenfassung ?? null, praxedo_id]
       );
       await addLog('make-webhook', 'RUECKRUF_GEPLANT', `ID: ${praxedo_id} | ${recall}`);
       return NextResponse.json({ ok: true });
@@ -169,20 +172,47 @@ export async function POST(req: NextRequest) {
     // confirmed | alternative_proposed | alternative_suggestion | declined
     // Setzt dispo_info → Kontakt verschwindet aus entries_ready
     if (type === 'post_call') {
-      const { status, note, direction, ki_notiz, ki_grund } = body;
+      const {
+        status, direction,
+        ki_vorname, ki_nachname, ki_agent, ki_direction,
+        ki_termin_ergebnis, ki_notiz, ki_naechste_aktion,
+        ki_stimmung, ki_angehoeriger, ki_zuverlaessigkeit,
+        ki_gespraechsqualitaet, ki_gespraechsende, ki_frage,
+        ki_erklaerung_wiederholt, ki_zusammenfassung,
+      } = body;
 
       await pool.query(
         `UPDATE entries SET
-           dispo_info   = '-',
-           abbruchgrund = $1,
-           notiz        = COALESCE($2, notiz),
-           ki_notiz     = COALESCE($3, ki_notiz),
-           ki_grund     = COALESCE($4, ki_grund),
-           updated_at   = NOW()
-         WHERE praxedo_id = $5`,
-        [status ?? null, note ?? null, ki_notiz ?? null, ki_grund ?? null, praxedo_id]
+           dispo_info                = '-',
+           abbruchgrund              = $1,
+           ki_vorname                = COALESCE($2,  ki_vorname),
+           ki_nachname               = COALESCE($3,  ki_nachname),
+           ki_direction              = COALESCE($4,  ki_direction),
+           ki_agent                  = COALESCE($5,  ki_agent),
+           ki_termin_ergebnis        = COALESCE($6,  ki_termin_ergebnis),
+           ki_notiz                  = COALESCE($7,  ki_notiz),
+           ki_naechste_aktion        = COALESCE($8,  ki_naechste_aktion),
+           ki_stimmung               = COALESCE($9,  ki_stimmung),
+           ki_angehoeriger           = COALESCE($10, ki_angehoeriger),
+           ki_zuverlaessigkeit       = COALESCE($11, ki_zuverlaessigkeit),
+           ki_gespraechsqualitaet    = COALESCE($12, ki_gespraechsqualitaet),
+           ki_gespraechsende         = COALESCE($13, ki_gespraechsende),
+           ki_frage                  = COALESCE($14, ki_frage),
+           ki_erklaerung_wiederholt  = COALESCE($15, ki_erklaerung_wiederholt),
+           ki_zusammenfassung        = COALESCE($16, ki_zusammenfassung),
+           updated_at                = NOW()
+         WHERE praxedo_id = $17`,
+        [
+          status ?? null,
+          ki_vorname ?? null, ki_nachname ?? null, ki_direction ?? null, ki_agent ?? null,
+          ki_termin_ergebnis ?? null, ki_notiz ?? null, ki_naechste_aktion ?? null,
+          ki_stimmung ?? null, ki_angehoeriger ?? null, ki_zuverlaessigkeit ?? null,
+          ki_gespraechsqualitaet ?? null, ki_gespraechsende ?? null, ki_frage ?? null,
+          ki_erklaerung_wiederholt ?? null, ki_zusammenfassung ?? null,
+          praxedo_id,
+        ]
       );
-      await addLog('make-webhook', 'ABSCHLUSS', `ID: ${praxedo_id} | ${status} | ${direction ?? ''} | ${note ?? ''}`);
+      await addLog('make-webhook', 'ABSCHLUSS', `ID: ${praxedo_id} | ${status} | ${direction ?? ''}`);
       return NextResponse.json({ ok: true });
     }
 

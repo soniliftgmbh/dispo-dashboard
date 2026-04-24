@@ -654,20 +654,73 @@ export default function Dashboard() {
             </div>
 
             {/* KI-Analyse */}
-            {(detailEntry.ki_notiz || detailEntry.ki_grund) && (
+            {(detailEntry.ki_zusammenfassung || detailEntry.ki_notiz || detailEntry.ki_termin_ergebnis ||
+              detailEntry.ki_stimmung || detailEntry.ki_naechste_aktion || detailEntry.ki_vorname) && (
               <div className="mb-5">
                 <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2.5">KI-Gesprächsanalyse</p>
-                <div className="rounded-xl border border-blue-100 bg-blue-50 divide-y divide-blue-100 overflow-hidden">
-                  {detailEntry.ki_notiz && (
+                <div className="rounded-xl border border-blue-100 bg-blue-50 overflow-hidden divide-y divide-blue-100">
+
+                  {/* Zusammenfassung prominent oben */}
+                  {detailEntry.ki_zusammenfassung && (
                     <div className="px-4 py-3">
-                      <div className="text-xs font-semibold text-blue-500 uppercase tracking-wide mb-1">Gesprächsnotiz</div>
-                      <div className="text-sm text-gray-700">{detailEntry.ki_notiz}</div>
+                      <div className="text-xs font-semibold text-blue-500 uppercase tracking-wide mb-1">Zusammenfassung</div>
+                      <div className="text-sm text-gray-700">{detailEntry.ki_zusammenfassung}</div>
                     </div>
                   )}
-                  {detailEntry.ki_grund && (
-                    <div className="px-4 py-3">
-                      <div className="text-xs font-semibold text-blue-500 uppercase tracking-wide mb-1">Grund / Anliegen</div>
-                      <div className="text-sm text-gray-700">{detailEntry.ki_grund}</div>
+
+                  {/* Terminergebnis & Notiz */}
+                  {(detailEntry.ki_termin_ergebnis || detailEntry.ki_notiz || detailEntry.ki_rueckruf_wunsch || detailEntry.ki_naechste_aktion) && (
+                    <div className="px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-2">
+                      {[
+                        { label: 'Terminergebnis',   val: detailEntry.ki_termin_ergebnis },
+                        { label: 'Rückrufwunsch',    val: detailEntry.ki_rueckruf_wunsch },
+                        { label: 'Notiz',            val: detailEntry.ki_notiz },
+                        { label: 'Nächste Aktion',   val: detailEntry.ki_naechste_aktion },
+                      ].filter(f => f.val).map(f => (
+                        <div key={f.label}>
+                          <div className="text-xs font-semibold text-blue-500 uppercase tracking-wide mb-0.5">{f.label}</div>
+                          <div className="text-sm text-gray-700">{f.val}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Gesprächsdetails */}
+                  {(detailEntry.ki_stimmung || detailEntry.ki_angehoeriger || detailEntry.ki_zuverlaessigkeit ||
+                    detailEntry.ki_gespraechsqualitaet || detailEntry.ki_gespraechsende ||
+                    detailEntry.ki_frage || detailEntry.ki_erklaerung_wiederholt) && (
+                    <div className="px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-2">
+                      {[
+                        { label: 'Stimmung',              val: detailEntry.ki_stimmung },
+                        { label: 'Angehöriger',           val: detailEntry.ki_angehoeriger },
+                        { label: 'Verlässlichkeit',       val: detailEntry.ki_zuverlaessigkeit },
+                        { label: 'Gesprächsqualität',     val: detailEntry.ki_gespraechsqualitaet },
+                        { label: 'Gesprächsende durch',   val: detailEntry.ki_gespraechsende },
+                        { label: 'KI-Frage',              val: detailEntry.ki_frage },
+                        { label: 'Erklärung wiederholt',  val: detailEntry.ki_erklaerung_wiederholt },
+                      ].filter(f => f.val).map(f => (
+                        <div key={f.label}>
+                          <div className="text-xs font-semibold text-blue-500 uppercase tracking-wide mb-0.5">{f.label}</div>
+                          <div className="text-sm text-gray-700">{f.val}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Anrufer-Daten von KI */}
+                  {(detailEntry.ki_vorname || detailEntry.ki_nachname || detailEntry.ki_agent || detailEntry.ki_direction) && (
+                    <div className="px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-2">
+                      {[
+                        { label: 'Vorname (KI)',    val: detailEntry.ki_vorname },
+                        { label: 'Nachname (KI)',   val: detailEntry.ki_nachname },
+                        { label: 'Agent',           val: detailEntry.ki_agent },
+                        { label: 'Richtung',        val: detailEntry.ki_direction },
+                      ].filter(f => f.val).map(f => (
+                        <div key={f.label}>
+                          <div className="text-xs font-semibold text-blue-500 uppercase tracking-wide mb-0.5">{f.label}</div>
+                          <div className="text-sm text-gray-700">{f.val}</div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
