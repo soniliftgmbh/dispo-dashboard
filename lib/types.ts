@@ -19,6 +19,7 @@ export interface Entry {
   dispo_info:           string | null;
   ruckrufe:             number;
   auftragstyp:          string | null;
+  erkrankt:             boolean;
   notiz:                string | null;
   erstellungsdatum:     string | null;
   archived:             boolean;
@@ -55,7 +56,7 @@ export interface Stats {
 }
 
 export function isErkrankt(e: Entry): boolean {
-  return (e.auftragstyp ?? '').toLowerCase().includes('erkrankt');
+  return e.erkrankt === true;
 }
 
 // Status-Ableitung — Single Source of Truth

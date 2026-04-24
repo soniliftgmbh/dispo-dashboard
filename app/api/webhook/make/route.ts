@@ -55,15 +55,15 @@ export async function POST(req: NextRequest) {
       const today = now.toISOString().slice(0, 10);
 
       const { rows } = await pool.query(
-        `SELECT tagesversuche, consecutive_failed_days, erster_anruftag, letzter_anruftag, wahlversuche, auftragstyp
+        `SELECT tagesversuche, consecutive_failed_days, erster_anruftag, letzter_anruftag, wahlversuche, erkrankt
          FROM entries WHERE praxedo_id = $1`,
         [praxedo_id]
       );
       if (!rows.length) return NextResponse.json({ error: 'Eintrag nicht gefunden.' }, { status: 404 });
 
-      let { tagesversuche, consecutive_failed_days, erster_anruftag, wahlversuche, auftragstyp } = rows[0];
+      let { tagesversuche, consecutive_failed_days, erster_anruftag, wahlversuche } = rows[0];
 
-      const erkrankt = (auftragstyp ?? '').toLowerCase().includes('erkrankt');
+      const erkrankt = rows[0].erkrankt === true;
 
       // Tageswechsel erkennen → tagesversuche zurücksetzen
       const letzter = rows[0].letzter_anruftag

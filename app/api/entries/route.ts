@@ -25,15 +25,11 @@ export async function POST(req: NextRequest) {
     const { praxedoId, erkrankt } = await req.json();
     if (!praxedoId) return NextResponse.json({ error: 'Praxedo ID fehlt.' }, { status: 400 });
 
-    // Präfix aus praxedo_id extrahieren (WARTUNG / DEMONTAGE / STÖRUNG)
-    const prefix      = String(praxedoId).split('-')[0] ?? '';
-    const auftragstyp = erkrankt ? `${prefix} erkrankt` : null;
-
     const result = await pool.query<Entry>(
-      `INSERT INTO entries (praxedo_id, auftragstyp, erstellungsdatum, added_by)
+      `INSERT INTO entries (praxedo_id, erkrankt, erstellungsdatum, added_by)
        VALUES ($1, $2, NOW(), $3)
        RETURNING *`,
-      [String(praxedoId), auftragstyp, session.username]
+      [String(praxedoId), !!erkrankt, session.username]
     );
 
     await addLog(session.username, 'NEUER_EINTRAG', `ID: ${praxedoId}${erkrankt ? ' [ERKRANKT]' : ''}`);

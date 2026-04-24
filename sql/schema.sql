@@ -74,12 +74,12 @@ CREATE TABLE IF NOT EXISTS activity_log (
 CREATE INDEX IF NOT EXISTS idx_log_created ON activity_log(created_at DESC);
 
 -- ── ERSTER ADMIN-BENUTZER ────────────────────────────────────
--- Passwort: admin123 (bcrypt hash, 10 rounds)
+-- Passwort: admin123 (bcrypt hash, 12 rounds)
 -- SOFORT nach erstem Login ändern!
 INSERT INTO users (username, password_hash, role)
 VALUES (
   'admin',
-  '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lHuu',
+  '$2a$12$qmvE1EGsPVgSnrFE/.6KEeAFmioPx3Ng9I8qR/CpuC4u/oKZrQJli',
   'admin'
 ) ON CONFLICT (username) DO NOTHING;
 

@@ -67,7 +67,7 @@ Im Supabase-Dashboard → **Project Settings** → **Database**:
 - Unter **Connection string** → Tab **URI** wählen
 - Den Connection-String kopieren (sieht so aus):
   ```
-postgresql://postgres.cjmcqkvhymyhnptkgagl:PASSWORT@aws-1-eu-central-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+postgresql://postgres.cjmcqkvhymyhnptkgagl:Sonilift2023!!@aws-1-eu-central-1.pooler.supabase.com:6543/postgres?pgbouncer=true
   ```
 - `[PASSWORD]` durch das Passwort aus Schritt 2 ersetzen
 - Am Ende `?pgbouncer=true` anhängen
