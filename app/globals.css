@@ -37,16 +37,16 @@
   --accent-fg:       30  41   8;
   --accent-soft:    240 247 217;
 
-  /* Board identities — Luminescence: Saffron / Coral-Rose / Aqua */
-  --board-wartung:         245 166  35;   /* saffron */
-  --board-wartung-glow:    255 195  90;   /* lighter for halo */
-  --board-wartung-soft:    255 243 224;
-  --board-reklamation:     232  93 117;   /* coral-rose */
-  --board-reklamation-glow:255 138 158;
-  --board-reklamation-soft:254 230 234;
-  --board-neuinstallation:  15 169 201;   /* aqua */
-  --board-neuinstallation-glow: 80 205 230;
-  --board-neuinstallation-soft:217 240 247;
+  /* Board identities — kollisionsfrei zu Status-Farben */
+  --board-wartung:         168  85 247;   /* violet */
+  --board-wartung-glow:    192 132 252;
+  --board-wartung-soft:    243 232 255;
+  --board-reklamation:     232  76 200;   /* fuchsia */
+  --board-reklamation-glow:248 130 222;
+  --board-reklamation-soft:252 232 248;
+  --board-neuinstallation:  21  79 158;   /* Sonilift brand blue */
+  --board-neuinstallation-glow: 60 130 220;
+  --board-neuinstallation-soft:223 235 252;
 
   /* Status — Luminescence palette (column-driver, board-übergreifend) */
   --status-pending:        107 124 178;   /* slate-indigo */
@@ -87,16 +87,16 @@
   --accent-fg:       18  26   6;
   --accent-soft:     58  76  20;
 
-  /* Board identities — Dark Luminescence: Honey / Rose-Violet / Aqua-Cyan */
-  --board-wartung:         250 196 110;   /* honey glow */
-  --board-wartung-glow:    255 215 145;
-  --board-wartung-soft:     58  44  20;
-  --board-reklamation:     232 130 195;   /* rose-violet */
-  --board-reklamation-glow:255 158 215;
-  --board-reklamation-soft: 60  28  56;
-  --board-neuinstallation:  90 210 232;   /* aqua-cyan */
-  --board-neuinstallation-glow:140 230 248;
-  --board-neuinstallation-soft: 16  56  68;
+  /* Board identities — Dark: Violet / Magenta / Sky-Blue (kollisionsfrei zu Status) */
+  --board-wartung:         180 130 250;   /* violet */
+  --board-wartung-glow:    205 165 255;
+  --board-wartung-soft:     46  30  72;
+  --board-reklamation:     240 110 220;   /* magenta */
+  --board-reklamation-glow:255 145 235;
+  --board-reklamation-soft: 60  20  56;
+  --board-neuinstallation:  95 155 255;   /* sky-blue */
+  --board-neuinstallation-glow:140 185 255;
+  --board-neuinstallation-soft: 18  36  72;
 
   /* Status — Dark Luminescence */
   --status-pending:        140 155 205;   /* soft indigo */
@@ -237,19 +237,22 @@
   }
   textarea.input { height: auto; padding: 0.625rem 0.75rem; line-height: 1.5; }
 
-  /* Card primitive — Liquid Glass */
+  /* Card primitive — Liquid Glass (perf-tuned: GPU layer + bounded paint) */
   .card {
     position: relative;
-    background-color: rgb(var(--bg-elevated) / 0.62);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgb(255 255 255 / 0.55);
+    background-color: rgb(var(--bg-elevated) / 0.50);
+    backdrop-filter: blur(16px) saturate(200%);
+    -webkit-backdrop-filter: blur(16px) saturate(200%);
+    border: 1px solid rgb(255 255 255 / 0.65);
     border-radius: 12px;
     box-shadow:
-      0 1px 0 0 rgb(255 255 255 / 0.85) inset,
-      0 0 0 1px rgb(0 0 0 / 0.04),
-      0 4px 16px rgb(0 0 0 / 0.06),
-      0 1px 3px rgb(0 0 0 / 0.04);
+      0 1px 0 0 rgb(255 255 255 / 0.95) inset,
+      0 0 0 1px rgb(0 0 0 / 0.05),
+      0 6px 22px rgb(0 0 0 / 0.08),
+      0 1px 3px rgb(0 0 0 / 0.05);
+    transform: translateZ(0);
+    isolation: isolate;
+    contain: layout style paint;
     transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
                 box-shadow 220ms cubic-bezier(0.22, 1, 0.36, 1),
                 background-color 200ms ease-out;
@@ -261,30 +264,31 @@
     inset: 0;
     border-radius: inherit;
     background: linear-gradient(180deg,
-      rgb(255 255 255 / 0.30) 0%,
-      rgb(255 255 255 / 0) 38%);
+      rgb(255 255 255 / 0.42) 0%,
+      rgb(255 255 255 / 0.06) 30%,
+      rgb(255 255 255 / 0) 55%);
     pointer-events: none;
     z-index: 0;
   }
   .card > * { position: relative; z-index: 1; }
 
   .card-hover:hover {
-    transform: translateY(-2px);
-    background-color: rgb(var(--bg-elevated) / 0.78);
+    transform: translateY(-2px) translateZ(0);
+    background-color: rgb(var(--bg-elevated) / 0.68);
     box-shadow:
-      0 1px 0 0 rgb(255 255 255 / 0.95) inset,
-      0 0 0 1px rgb(0 0 0 / 0.05),
-      0 12px 28px rgb(0 0 0 / 0.10),
-      0 4px 8px rgb(0 0 0 / 0.06);
+      0 1px 0 0 rgb(255 255 255 / 1) inset,
+      0 0 0 1px rgb(0 0 0 / 0.06),
+      0 14px 32px rgb(0 0 0 / 0.12),
+      0 4px 10px rgb(0 0 0 / 0.07);
   }
   .dark .card {
-    background-color: rgb(var(--bg-elevated) / 0.45);
-    border-color: rgb(255 255 255 / 0.10);
+    background-color: rgb(var(--bg-elevated) / 0.32);
+    border-color: rgb(255 255 255 / 0.14);
     box-shadow:
-      0 1px 0 0 rgb(255 255 255 / 0.10) inset,
-      0 0 0 1px rgb(255 255 255 / 0.03),
-      0 6px 20px rgb(0 0 0 / 0.45),
-      0 2px 6px rgb(0 0 0 / 0.25);
+      0 1px 0 0 rgb(255 255 255 / 0.14) inset,
+      0 0 0 1px rgb(255 255 255 / 0.04),
+      0 8px 24px rgb(0 0 0 / 0.50),
+      0 2px 6px rgb(0 0 0 / 0.30);
   }
   .dark .card::before {
     background: linear-gradient(180deg,
@@ -380,6 +384,35 @@
     display: flex;
     flex-direction: column;
     gap: 0.625rem;
+  }
+
+  /* Kanban canvas — boardfarbiger Hintergrund-Wash für sofortige Auftragstyp-Erkennung.
+     Driver: --board-color / --board-color-glow / --board-color-soft (inline gesetzt).
+     Performance: contain + GPU layer; Wash über Pseudo-Layer, nicht Backdrop. */
+  .kanban-frame {
+    position: relative;
+    isolation: isolate;
+    contain: layout style;
+    background-color: rgb(var(--board-color-soft) / 0.55);
+    background-image:
+      radial-gradient(ellipse 80% 60% at 12% 0%,
+        rgb(var(--board-color-glow, var(--board-color)) / 0.22) 0%,
+        rgb(var(--board-color) / 0) 60%),
+      radial-gradient(ellipse 70% 55% at 100% 100%,
+        rgb(var(--board-color) / 0.18) 0%,
+        rgb(var(--board-color) / 0) 65%);
+    border-radius: 16px;
+    transition: background-color 280ms ease-out;
+  }
+  .dark .kanban-frame {
+    background-color: rgb(var(--board-color-soft) / 0.40);
+    background-image:
+      radial-gradient(ellipse 80% 60% at 12% 0%,
+        rgb(var(--board-color-glow, var(--board-color)) / 0.18) 0%,
+        rgb(var(--board-color) / 0) 60%),
+      radial-gradient(ellipse 70% 55% at 100% 100%,
+        rgb(var(--board-color) / 0.14) 0%,
+        rgb(var(--board-color) / 0) 65%);
   }
 
   /* Pill — keep softer corners so it reads as a tag */

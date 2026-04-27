@@ -1207,8 +1207,15 @@ export default function Dashboard() {
                 );
               })()}
 
-              {/* Kanban Columns — Atelier tiles */}
-              <div className="flex-1 overflow-x-auto overflow-y-hidden flex gap-3 px-6 pt-1 pb-6">
+              {/* Kanban Columns — Atelier tiles, board-tinted canvas */}
+              <div
+                className="kanban-frame flex-1 overflow-x-auto overflow-y-hidden flex gap-3 px-6 pt-3 pb-6 mx-4 mb-4"
+                style={{
+                  ['--board-color' as string]: `var(--board-${selectedBoard ?? 'wartung'})`,
+                  ['--board-color-glow' as string]: `var(--board-${selectedBoard ?? 'wartung'}-glow)`,
+                  ['--board-color-soft' as string]: `var(--board-${selectedBoard ?? 'wartung'}-soft)`,
+                }}
+              >
                 {COL_CONFIG.map(col => {
                   const colCards = filtered.filter(e => e.status === col.id);
                   return (
