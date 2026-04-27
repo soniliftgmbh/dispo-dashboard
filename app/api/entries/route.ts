@@ -82,6 +82,28 @@ export async function POST(req: NextRequest) {
     // Auftragstyp automatisch aus ID ableiten
     const auftragstyp = auftragsTypFromId(id);
 
+    // Konflikt-Check: existiert die ID bereits?
+    const existing = await pool.query<{ id: string; archived: boolean }>(
+      `SELECT id, archived FROM entries WHERE praxedo_id = $1`,
+      [id]
+    );
+    if (existing.rows.length > 0) {
+      const archivedRow   = existing.rows.find(r => r.archived);
+      const activeRow     = existing.rows.find(r => !r.archived);
+      if (activeRow) {
+        return NextResponse.json({
+          error: 'duplicate_active',
+          message: 'Diese Praxedo-ID ist bereits in Bearbeitung.',
+        }, { status: 409 });
+      }
+      if (archivedRow) {
+        return NextResponse.json({
+          error: 'archived_exists',
+          message: 'Diese Praxedo-ID war bereits in Bearbeitung und ist archiviert. Sollen wir den Kontakt neu behandeln?',
+        }, { status: 409 });
+      }
+    }
+
     const result = await pool.query<Entry>(
       `INSERT INTO entries (praxedo_id, erkrankt, board_type, auftragstyp, erstellungsdatum, added_by)
        VALUES ($1, $2, $3, $4, NOW(), $5)
@@ -106,7 +128,7 @@ export async function POST(req: NextRequest) {
   } catch (e: unknown) {
     const msg    = e instanceof Error ? e.message : 'Fehler';
     const status = msg.includes('unique') ? 409 : msg.includes('Berechtigung') || msg.includes('Nicht angemeldet') ? 401 : 500;
-    const error  = msg.includes('unique') ? 'Praxedo ID bereits vorhanden.' : msg;
-    return NextResponse.json({ error }, { status });
+    const error  = msg.includes('unique') ? 'duplicate_active' : msg;
+    return NextResponse.json({ error, message: 'Praxedo ID bereits vorhanden.' }, { status });
   }
 }

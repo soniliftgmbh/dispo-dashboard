@@ -11,16 +11,28 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     // Editierbare Felder: notiz, callbackTime, telefon
     if (action === 'update') {
-      const { notiz, callbackTime, telefon } = body;
+      const { notiz, callbackTime, telefon, anrede, kundenname, strasse, hausnummer, plz, ort, email } = body;
       const result = await pool.query<Entry>(
         `UPDATE entries
          SET notiz         = COALESCE($1, notiz),
              callback_time = $2,
              telefon       = COALESCE($3, telefon),
+             anrede        = COALESCE($4, anrede),
+             kundenname    = COALESCE($5, kundenname),
+             strasse       = COALESCE($6, strasse),
+             hausnummer    = COALESCE($7, hausnummer),
+             plz           = COALESCE($8, plz),
+             ort           = COALESCE($9, ort),
+             email         = COALESCE($10, email),
              updated_at    = NOW()
-         WHERE id = $4
+         WHERE id = $11
          RETURNING *`,
-        [notiz ?? null, callbackTime || null, telefon ?? null, params.id]
+        [
+          notiz ?? null, callbackTime || null, telefon ?? null,
+          anrede ?? null, kundenname ?? null, strasse ?? null,
+          hausnummer ?? null, plz ?? null, ort ?? null, email ?? null,
+          params.id,
+        ]
       );
       await addLog(session.username, 'AKTUALISIERT', `ID: ${params.id}`);
       const entry = { ...result.rows[0], status: deriveStatus(result.rows[0]) };
@@ -72,19 +84,23 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       return NextResponse.json({ ok: true });
     }
 
-    // Manuell abbrechen → outcome = 'abgebrochen'
+    // Manuell abbrechen → outcome = 'abgebrochen', mit explizitem Grund
     if (action === 'cancel') {
+      const { abbruchgrund } = body;
+      if (!abbruchgrund || typeof abbruchgrund !== 'string') {
+        return NextResponse.json({ error: 'Abbruchgrund fehlt.' }, { status: 400 });
+      }
       const result = await pool.query<Entry>(
         `UPDATE entries
          SET outcome      = 'abgebrochen',
-             abbruchgrund = 'manuell abgebrochen',
+             abbruchgrund = $1,
              is_calling   = false,
              updated_at   = NOW()
-         WHERE id = $1
+         WHERE id = $2
          RETURNING *`,
-        [params.id]
+        [abbruchgrund, params.id]
       );
-      await addLog(session.username, 'ABGEBROCHEN', `ID: ${params.id}`);
+      await addLog(session.username, 'ABGEBROCHEN', `ID: ${params.id} | ${abbruchgrund}`);
       const entry = { ...result.rows[0], status: deriveStatus(result.rows[0]) };
       return NextResponse.json({ ok: true, entry });
     }

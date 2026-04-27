@@ -59,7 +59,14 @@ export interface Entry {
   ki_erklaerung_wiederholt:  string | null;
   ki_zusammenfassung:        string | null;
   erstellungsdatum:     string | null;
+  // Anrede + Adresse (v4)
+  anrede:               string | null;
+  strasse:              string | null;
+  hausnummer:           string | null;
+  plz:                  string | null;
+  ort:                  string | null;
   archived:             boolean;
+  archived_at:          string | null;
   created_at:           string;
   updated_at:           string;
   // Abgeleiteter Status (client-seitig)
@@ -143,6 +150,17 @@ export function deriveStatus(e: Entry): Status {
   if (e.outcome === 'nacharbeiten')   return 'nacharbeiten';
   if (e.outcome === 'abgebrochen')    return 'abgebrochen';
   return 'ausstehend';
+}
+
+// ── Board CSS-Variable für Identitätsfarbe ─────────────────────
+export function boardColorVar(b: BoardType): string {
+  return `var(--board-${b})`;
+}
+export function boardColorRgb(b: BoardType): string {
+  return `rgb(var(--board-${b}))`;
+}
+export function boardColorSoftRgb(b: BoardType): string {
+  return `rgb(var(--board-${b}-soft))`;
 }
 
 // ── Board-Label ────────────────────────────────────────────────

@@ -8,9 +8,76 @@ import {
 } from '@/lib/types';
 import { Wordmark } from '@/lib/ui/Wordmark';
 import { ThemeToggle } from '@/lib/ui/ThemeToggle';
-import { StatusPill, StatusBar, StatusDot } from '@/lib/ui/StatusPill';
+import { StatusPill, StatusDot } from '@/lib/ui/StatusPill';
 import { ToastContainer, ToastMsg, ToastType } from '@/lib/ui/Toast';
 import { Modal, ModalHeader } from '@/lib/ui/Modal';
+import { SlidePanel, SlidePanelHeader, SlidePanelFooter } from '@/lib/ui/SlidePanel';
+import { Toggle } from '@/lib/ui/Toggle';
+import { Checkbox } from '@/lib/ui/Checkbox';
+import { boardColorRgb, boardColorSoftRgb } from '@/lib/types';
+
+// ── Cancellation reasons (Abbruchgrund-Picker) ──────────────────
+const ABBRUCHGRUENDE = [
+  'Kunde nicht erreichbar',
+  'Kunde verstorben',
+  'Kunde umgezogen',
+  'Kein Interesse mehr',
+  'Termin bereits vereinbart (extern)',
+  'Falsche Telefonnummer',
+  'Demontage gewünscht',
+  'Sonstiges',
+];
+
+// ── Sort options ────────────────────────────────────────────────
+type SortKey =
+  | 'default'
+  | 'termin_asc' | 'termin_desc'
+  | 'wahl_asc'   | 'wahl_desc'
+  | 'lk_desc'    | 'lk_asc'
+  | 'name_asc'   | 'name_desc';
+
+const SORT_LABELS: Record<SortKey, string> = {
+  default:    'Standard',
+  termin_asc: 'Termin (älteste zuerst)',
+  termin_desc:'Termin (neueste zuerst)',
+  wahl_asc:   'Wahlversuche (wenig)',
+  wahl_desc:  'Wahlversuche (viel)',
+  lk_desc:    'Letzter Kontakt (neueste)',
+  lk_asc:     'Letzter Kontakt (älteste)',
+  name_asc:   'Kundenname A→Z',
+  name_desc:  'Kundenname Z→A',
+};
+
+function applySort(arr: Entry[], key: SortKey): Entry[] {
+  if (key === 'default') return arr;
+  const c = [...arr];
+  const cmpDate = (a: string | null, b: string | null, dir: 1 | -1) => {
+    const av = a ? new Date(a).getTime() : 0;
+    const bv = b ? new Date(b).getTime() : 0;
+    return (av - bv) * dir;
+  };
+  switch (key) {
+    case 'termin_asc':  return c.sort((a, b) => cmpDate(a.termin, b.termin, 1));
+    case 'termin_desc': return c.sort((a, b) => cmpDate(a.termin, b.termin, -1));
+    case 'wahl_asc':    return c.sort((a, b) => a.wahlversuche - b.wahlversuche);
+    case 'wahl_desc':   return c.sort((a, b) => b.wahlversuche - a.wahlversuche);
+    case 'lk_desc':     return c.sort((a, b) => cmpDate(a.letzter_wahlversuch, b.letzter_wahlversuch, -1));
+    case 'lk_asc':      return c.sort((a, b) => cmpDate(a.letzter_wahlversuch, b.letzter_wahlversuch, 1));
+    case 'name_asc':    return c.sort((a, b) => (a.kundenname ?? '').localeCompare(b.kundenname ?? ''));
+    case 'name_desc':   return c.sort((a, b) => (b.kundenname ?? '').localeCompare(a.kundenname ?? ''));
+  }
+}
+
+// ── Status → board-aware bar color helper ──────────────────────
+function StatusBarBoard({ board, className = '' }: { board: BoardType; className?: string }) {
+  return (
+    <span
+      className={`block w-full ${className}`}
+      style={{ backgroundColor: boardColorRgb(board), height: 3, borderRadius: 2 }}
+      aria-hidden
+    />
+  );
+}
 
 // ── HELPERS ──────────────────────────────────────────────────
 function fmtDate(s: string | null) {
@@ -59,10 +126,23 @@ function KanbanCard({
   return (
     <div
       onClick={onClick}
-      className={`card card-hover group relative cursor-pointer p-3 pr-3.5 transition-all
+      className={`card card-hover group relative cursor-pointer p-3 pl-9 pr-3.5 transition-all
         ${selected ? '!border-primary' : ''}`}
       style={selected ? { boxShadow: '0 0 0 2px rgb(var(--primary-base) / 0.25)' } : undefined}
     >
+      {/* Bulk-select checkbox — top-left, always visible */}
+      <div className="absolute top-2.5 left-2.5 z-10">
+        <Checkbox
+          checked={selected}
+          onChange={() => {
+            const fakeEv = { stopPropagation: () => {} } as React.MouseEvent;
+            onSelect(fakeEv);
+          }}
+          ariaLabel={selected ? 'Auswahl entfernen' : 'Auswählen'}
+          stopProp
+        />
+      </div>
+
       {/* Top row: subtype/badge + status pill */}
       <div className="flex items-start justify-between gap-2 mb-1.5">
         <div className="min-w-0 flex-1">
@@ -86,24 +166,6 @@ function KanbanCard({
           <StatusPill status={status} />
         </div>
       </div>
-
-      {/* Bulk-select checkbox (hover-revealed, top-left) */}
-      <button
-        type="button"
-        className={`absolute top-2 left-2 z-10 w-4 h-4 rounded border flex items-center justify-center transition-all
-          ${selected
-            ? 'opacity-100 border-primary'
-            : 'opacity-0 group-hover:opacity-100 border-line-strong bg-bg-elevated'}`}
-        style={selected ? { backgroundColor: 'rgb(var(--primary-base))' } : undefined}
-        onClick={(ev) => { ev.stopPropagation(); onSelect(ev); }}
-        aria-label={selected ? 'Auswahl entfernen' : 'Auswählen'}
-      >
-        {selected && (
-          <svg className="w-2.5 h-2.5" fill="none" stroke="rgb(var(--primary-fg))" strokeWidth={3} viewBox="0 0 12 12">
-            <path d="M2 6l3 3 5-5" />
-          </svg>
-        )}
-      </button>
 
       {/* Erkrankt chip */}
       {isErkrankt && (
@@ -204,17 +266,26 @@ function BoardTile({
   return (
     <button
       onClick={onClick}
-      className="card card-hover group p-6 text-left flex flex-col gap-4 min-h-[180px] transition-all"
+      className="card card-hover group p-6 text-left flex flex-col gap-4 min-h-[180px] transition-all relative overflow-hidden"
     >
+      {/* Top color bar in board-identity color */}
+      <span
+        aria-hidden
+        className="absolute top-0 left-0 right-0"
+        style={{ height: 3, backgroundColor: boardColorRgb(board) }}
+      />
       <div className="flex items-center justify-between">
         <span
-          className="material-icons-round text-ink-muted group-hover:text-primary transition-colors"
-          style={{ fontSize: 28 }}
+          className="material-icons-round transition-colors"
+          style={{ fontSize: 28, color: boardColorRgb(board) }}
         >
           {c.icon}
         </span>
         {count > 0 && (
-          <span className="pill bg-bg-sunken text-ink-muted tabular-nums">
+          <span
+            className="pill tabular-nums"
+            style={{ backgroundColor: boardColorSoftRgb(board), color: boardColorRgb(board) }}
+          >
             {count} offen
           </span>
         )}
@@ -255,14 +326,38 @@ export default function Dashboard() {
   const [selectedIds, setSelectedIds]         = useState<Set<string>>(new Set());
   const refreshRef                            = useRef<ReturnType<typeof setInterval>>();
 
-  // Detail Modal
+  // Detail Modal (slide panel)
   const [detailEntry,         setDetailEntry]         = useState<Entry | null>(null);
   const [detailNotiz,         setDetailNotiz]         = useState('');
   const [detailCb,            setDetailCb]            = useState('');
   const [detailTelefon,       setDetailTelefon]       = useState('');
+  const [detailAnrede,        setDetailAnrede]        = useState('');
+  const [detailKundenname,    setDetailKundenname]    = useState('');
+  const [detailEmail,         setDetailEmail]         = useState('');
+  const [detailStrasse,       setDetailStrasse]       = useState('');
+  const [detailHausnummer,    setDetailHausnummer]    = useState('');
+  const [detailPlz,           setDetailPlz]           = useState('');
+  const [detailOrt,           setDetailOrt]           = useState('');
   const [detailComments,      setDetailComments]      = useState<Comment[]>([]);
   const [newComment,          setNewComment]          = useState('');
   const [nacharbeitenAbschl,  setNacharbeitenAbschl]  = useState('');
+
+  // Inline pickers
+  const [showCancelPicker,    setShowCancelPicker]    = useState(false);
+  const [cancelGrund,         setCancelGrund]         = useState('');
+  const [showHardDelete,      setShowHardDelete]      = useState(false);
+  const [showArchivedConflict,setShowArchivedConflict]= useState(false);
+  const [conflictPraxedoId,   setConflictPraxedoId]   = useState('');
+
+  // Sort
+  const [sortKey, setSortKey]               = useState<SortKey>('default');
+  const [sortMenuOpen, setSortMenuOpen]     = useState(false);
+
+  // Archive filters
+  const [archiveSearch,        setArchiveSearch]        = useState('');
+  const [archiveFilterTyp,     setArchiveFilterTyp]     = useState('');
+  const [archiveFilterBoard,   setArchiveFilterBoard]   = useState<BoardType | ''>('');
+  const [archiveFilterOutcome, setArchiveFilterOutcome] = useState('');
 
   // New Entry Modal
   const [showNew,      setShowNew]      = useState(false);
@@ -403,17 +498,44 @@ export default function Dashboard() {
   async function submitNew() {
     if (!newId.trim()) { toast('Bitte eine Praxedo ID eingeben.', 'error'); return; }
     setNewLoading(true);
+    const trimmed = newId.trim();
     try {
-      await api('/api/entries', {
+      const res = await fetch('/api/entries', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ praxedoId: newId.trim(), erkrankt: newErkrankt, board: selectedBoard }),
+        body:    JSON.stringify({ praxedoId: trimmed, erkrankt: newErkrankt, board: selectedBoard }),
       });
-      toast(`ID ${newId.trim()} eingetragen.`, 'success');
+      const data = await res.json();
+      if (res.status === 409 && data.error === 'archived_exists') {
+        setConflictPraxedoId(trimmed);
+        setShowArchivedConflict(true);
+        setShowNew(false);
+        return;
+      }
+      if (!res.ok) {
+        if (res.status === 401) router.push('/login');
+        toast(data.message ?? data.error ?? 'Fehler', 'error');
+        return;
+      }
+      toast(`ID ${trimmed} eingetragen.`, 'success');
       setShowNew(false); setNewId(''); setNewErkrankt(false);
       loadEntries(); loadStats();
     } catch (e) { if (e instanceof Error) toast(e.message, 'error'); }
     finally { setNewLoading(false); }
+  }
+
+  async function recreateFromArchive() {
+    try {
+      await api('/api/entries/recreate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ praxedoId: conflictPraxedoId, erkrankt: newErkrankt }),
+      });
+      toast(`ID ${conflictPraxedoId} neu angelegt.`, 'success');
+      setShowArchivedConflict(false);
+      setNewId(''); setNewErkrankt(false); setConflictPraxedoId('');
+      loadEntries(); loadStats();
+    } catch (e) { if (e instanceof Error) toast(e.message, 'error'); }
   }
 
   async function submitBulk() {
@@ -435,7 +557,15 @@ export default function Dashboard() {
   async function openDetail(e: Entry) {
     setDetailEntry(e); setDetailNotiz(e.notiz ?? '');
     setDetailCb(toInputDT(e.callback_time)); setDetailTelefon(e.telefon ?? '');
+    setDetailAnrede(e.anrede ?? '');
+    setDetailKundenname(e.kundenname ?? '');
+    setDetailEmail(e.email ?? '');
+    setDetailStrasse(e.strasse ?? '');
+    setDetailHausnummer(e.hausnummer ?? '');
+    setDetailPlz(e.plz ?? '');
+    setDetailOrt(e.ort ?? '');
     setNacharbeitenAbschl(''); setNewComment('');
+    setShowCancelPicker(false); setShowHardDelete(false); setCancelGrund('');
     if ((e.unread_by ?? []).includes(username)) {
       api(`/api/entries/${e.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'mark_read' }) }).catch(() => {});
     }
@@ -450,7 +580,19 @@ export default function Dashboard() {
     try {
       await api(`/api/entries/${detailEntry.id}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update', notiz: detailNotiz, callbackTime: detailCb || null, telefon: detailTelefon }),
+        body: JSON.stringify({
+          action: 'update',
+          notiz: detailNotiz,
+          callbackTime: detailCb || null,
+          telefon: detailTelefon,
+          anrede: detailAnrede || null,
+          kundenname: detailKundenname || null,
+          email: detailEmail || null,
+          strasse: detailStrasse || null,
+          hausnummer: detailHausnummer || null,
+          plz: detailPlz || null,
+          ort: detailOrt || null,
+        }),
       });
       toast('Gespeichert.', 'success');
       setDetailEntry(null); loadEntries();
@@ -481,16 +623,41 @@ export default function Dashboard() {
     } catch (e) { if (e instanceof Error) toast(e.message, 'error'); }
   }
 
-  async function cancelEntry() {
-    if (!detailEntry || !confirm(`"${detailEntry.kundenname || detailEntry.praxedo_id}" manuell abbrechen?`)) return;
+  function cancelEntry() {
+    if (!detailEntry) return;
+    setCancelGrund('');
+    setShowCancelPicker(true);
+  }
+
+  async function confirmCancelWithReason() {
+    if (!detailEntry) return;
+    if (!cancelGrund) { toast('Bitte einen Grund auswählen.', 'error'); return; }
     try {
       await api(`/api/entries/${detailEntry.id}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'cancel' }),
+        body: JSON.stringify({ action: 'cancel', abbruchgrund: cancelGrund }),
       });
       toast('Kontakt abgebrochen.', 'info');
+      setShowCancelPicker(false);
       setDetailEntry(null); loadEntries(); loadStats();
     } catch (e) { if (e instanceof Error) toast(e.message, 'error'); }
+  }
+
+  async function hardDeleteEntry(id: string) {
+    try {
+      await api(`/api/entries/${id}/hard-delete`, { method: 'DELETE' });
+      toast('Eintrag unwiderruflich gelöscht.', 'success');
+      setShowHardDelete(false);
+      setDetailEntry(null);
+      loadEntries(); loadStats();
+      // Aus Archiv-Liste entfernen
+      setArchive(arr => arr.filter(x => x.id !== id));
+    } catch (e) { if (e instanceof Error) toast(e.message, 'error'); }
+  }
+
+  function openPrint() {
+    if (!detailEntry) return;
+    window.open(`/print/${detailEntry.id}`, '_blank');
   }
 
   async function archiveEntry() {
@@ -602,15 +769,29 @@ export default function Dashboard() {
     router.push('/login');
   }
 
-  // ── FILTER ────────────────────────────────────────────────────
-  const filtered = entries.filter(e => {
-    if (e.status === 'final') return false;
-    if (search && ![ e.praxedo_id, e.kundenname, e.telefon, e.techniker ].some(v => v?.toLowerCase().includes(search.toLowerCase()))) return false;
-    if (filterTechniker && e.techniker !== filterTechniker) return false;
-    if (filterSubtype && selectedBoard === 'reklamation' && e.auftragstyp !== filterSubtype) return false;
-    if (filterStatus && e.status !== filterStatus) return false;
-    return true;
-  });
+  // ── FILTER + SORT ────────────────────────────────────────────
+  const filtered = applySort(
+    entries.filter(e => {
+      if (e.status === 'final') return false;
+      if (search && ![ e.praxedo_id, e.kundenname, e.telefon, e.techniker ].some(v => v?.toLowerCase().includes(search.toLowerCase()))) return false;
+      if (filterTechniker && e.techniker !== filterTechniker) return false;
+      if (filterSubtype && selectedBoard === 'reklamation' && e.auftragstyp !== filterSubtype) return false;
+      if (filterStatus && e.status !== filterStatus) return false;
+      return true;
+    }),
+    sortKey
+  );
+
+  // Persist sort per board
+  useEffect(() => {
+    if (!selectedBoard) return;
+    const saved = localStorage.getItem(`sort_${selectedBoard}`) as SortKey | null;
+    setSortKey(saved && saved in SORT_LABELS ? saved : 'default');
+  }, [selectedBoard]);
+  useEffect(() => {
+    if (!selectedBoard) return;
+    localStorage.setItem(`sort_${selectedBoard}`, sortKey);
+  }, [sortKey, selectedBoard]);
 
   const technikerList = Array.from(new Set(entries.map(e => e.techniker).filter((v): v is string => !!v)));
   const subtypeList   = Array.from(new Set(entries.map(e => e.auftragstyp).filter((v): v is string => !!v)));
@@ -698,8 +879,17 @@ export default function Dashboard() {
 
         <main className="flex-1 flex flex-col items-center justify-center p-12">
           <div className="w-full max-w-3xl animate-slide-up">
-            <h1 className="text-2xl font-semibold text-ink mb-1">Auftragstyp wählen</h1>
-            <p className="text-sm text-ink-muted mb-8">Wähle ein Board, um mit der Disposition zu beginnen.</p>
+            {/* Sonilift logo header — only on the Auftragstyp picker */}
+            <div className="flex flex-col items-center mb-6">
+              <img
+                src="/sonilift-logo.png"
+                alt="Sonilift"
+                style={{ maxHeight: 28, width: 'auto' }}
+              />
+              <div className="mt-3 w-full max-w-md border-t border-line" />
+            </div>
+            <h1 className="text-2xl font-semibold text-ink mb-1 text-center">Auftragstyp wählen</h1>
+            <p className="text-sm text-ink-muted mb-8 text-center">Wähle ein Board, um mit der Disposition zu beginnen.</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {allowed.map(b => (
                 <BoardTile key={b} board={b} count={boardCounts[b]} onClick={() => selectBoard(b)} />
@@ -731,8 +921,43 @@ export default function Dashboard() {
         <Wordmark className="h-5 text-ink mr-1" style={{ width: 'auto' }} />
 
         {/* Board switcher (segmented) — center-ish */}
-        <div className="ml-2">
+        <div className="ml-2 flex items-center gap-2">
           <BoardSwitcher />
+          {/* Sort menu */}
+          <div className="relative">
+            <button
+              onClick={() => setSortMenuOpen(o => !o)}
+              className="btn btn-secondary btn-sm"
+              title="Sortierung"
+            >
+              <span className="material-icons-round" style={{ fontSize: 14 }}>sort</span>
+              {sortKey === 'default' ? 'Sortierung' : SORT_LABELS[sortKey]}
+            </button>
+            {sortMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setSortMenuOpen(false)} />
+                <div className="absolute top-full left-0 mt-1 z-50 floating bg-bg-elevated border-[1.5px] border-line rounded-md py-1 min-w-[240px]" style={{ borderRadius: 6 }}>
+                  {(Object.keys(SORT_LABELS) as SortKey[]).filter(k => k !== 'default').map(k => (
+                    <button
+                      key={k}
+                      onClick={() => { setSortKey(k); setSortMenuOpen(false); }}
+                      className={`w-full text-left px-3 py-1.5 text-sm hover:bg-bg-sunken ${sortKey === k ? 'text-primary font-medium' : 'text-ink'}`}
+                    >
+                      {SORT_LABELS[k]}
+                    </button>
+                  ))}
+                  <div className="border-t border-line mt-1 pt-1">
+                    <button
+                      onClick={() => { setSortKey('default'); setSortMenuOpen(false); }}
+                      className="w-full text-left px-3 py-1.5 text-sm text-ink-muted hover:bg-bg-sunken"
+                    >
+                      Standard wiederherstellen
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Search */}
@@ -772,7 +997,13 @@ export default function Dashboard() {
       <div className="flex flex-1 overflow-hidden">
 
         {/* ── SIDEBAR ──────────────────────────────────────────── */}
-        <nav className="w-[220px] flex-shrink-0 bg-bg-subtle border-r border-line flex flex-col p-3 gap-1">
+        <nav className="w-[220px] flex-shrink-0 bg-bg-subtle border-r-[1.5px] border-line flex flex-col p-3 gap-1 relative">
+          {/* Board color rail */}
+          <span
+            aria-hidden
+            className="absolute top-0 bottom-0 left-0"
+            style={{ width: 3, backgroundColor: boardColorRgb(selectedBoard) }}
+          />
           <p className="text-[10px] font-medium uppercase tracking-wider text-ink-faint px-2.5 mt-1 mb-1.5">
             Disposition
           </p>
@@ -956,16 +1187,36 @@ export default function Dashboard() {
                   return (
                     <div
                       key={col.id}
-                      className="flex-shrink-0 w-[280px] flex flex-col bg-bg-subtle/0"
+                      className="flex-shrink-0 w-[280px] flex flex-col"
                     >
-                      {/* Column header */}
-                      <div className="px-1 pt-1 pb-2 flex items-center gap-2 sticky top-0 z-[1] bg-bg-subtle">
-                        <span className="text-xs font-semibold text-ink uppercase tracking-wide">
+                      {/* Column header — Neo-Bauhaus solid block, sharp edges */}
+                      <div
+                        className="px-3 py-2.5 flex items-center justify-between gap-2 sticky top-0 z-[1] mb-2"
+                        style={{
+                          backgroundColor: boardColorRgb(selectedBoard),
+                          borderRadius: 0,
+                          boxShadow: '3px 3px 0 0 rgb(var(--text) / 0.12)',
+                        }}
+                      >
+                        <span
+                          className="text-[11px] font-bold uppercase tracking-[0.12em]"
+                          style={{ color: 'white' }}
+                        >
                           {col.label}
                         </span>
-                        <span className="text-xs text-ink-faint tabular-nums">{colCards.length}</span>
+                        <span
+                          className="text-[11px] font-bold tabular-nums px-1.5 py-0.5"
+                          style={{
+                            color: boardColorRgb(selectedBoard),
+                            backgroundColor: 'white',
+                            borderRadius: 0,
+                            minWidth: 22,
+                            textAlign: 'center',
+                          }}
+                        >
+                          {colCards.length}
+                        </span>
                       </div>
-                      <StatusBar status={col.id} className="mb-2" />
 
                       <div className="flex-1 overflow-y-auto flex flex-col gap-2 pr-1 -mr-1">
                         {colCards.length === 0 ? (
@@ -999,54 +1250,185 @@ export default function Dashboard() {
           )}
 
           {/* ARCHIV */}
-          {view === 'archive' && (
-            <>
-              <div className="flex items-center gap-3 px-6 pt-4 pb-3 flex-shrink-0">
-                <h2 className="text-lg font-semibold text-ink">Archiv</h2>
-                <span className="text-xs text-ink-faint tabular-nums">{archive.length} Einträge</span>
-                <button
-                  onClick={() => api<{ entries: Entry[] }>(selectedBoard ? `/api/archive?board=${selectedBoard}` : '/api/archive').then(d => setArchive(d.entries)).catch(() => {})}
-                  className="btn btn-secondary btn-sm ml-auto"
-                >
-                  <span className="material-icons-round" style={{ fontSize: 14 }}>refresh</span>
-                </button>
-              </div>
-              <div className="flex-1 overflow-auto px-6 pb-6">
-                <table className="w-full text-sm border-collapse">
-                  <thead>
-                    <tr>
-                      {['Praxedo ID','Name','Telefon','Termin','Zeitraum','Techniker','Typ','Versuche','Abschluss'].map(h => (
-                        <th
-                          key={h}
-                          className="text-left py-2 px-3 text-[10px] font-medium uppercase tracking-wider text-ink-faint whitespace-nowrap bg-bg-subtle sticky top-0 border-b border-line"
+          {view === 'archive' && (() => {
+            // Filter
+            const q = archiveSearch.trim().toLowerCase();
+            const filteredArchive = archive.filter(e => {
+              if (q && !(
+                (e.praxedo_id ?? '').toLowerCase().includes(q) ||
+                (e.techniker ?? '').toLowerCase().includes(q) ||
+                (e.auftragstyp ?? '').toLowerCase().includes(q) ||
+                (e.nacharbeiten_abschluss ?? '').toLowerCase().includes(q) ||
+                (e.abbruchgrund ?? '').toLowerCase().includes(q)
+              )) return false;
+              if (archiveFilterBoard && e.board_type !== archiveFilterBoard) return false;
+              if (archiveFilterTyp && (e.auftragstyp ?? '') !== archiveFilterTyp) return false;
+              if (archiveFilterOutcome) {
+                const out = e.outcome ?? (e.abbruchgrund ? 'abgebrochen' : '—');
+                if (out !== archiveFilterOutcome) return false;
+              }
+              return true;
+            });
+
+            // Group by month (YYYY-MM)
+            const groups = new Map<string, Entry[]>();
+            for (const e of filteredArchive) {
+              const ts = e.archived_at ?? e.updated_at ?? e.created_at;
+              const d = ts ? new Date(ts) : new Date();
+              const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+              if (!groups.has(key)) groups.set(key, []);
+              groups.get(key)!.push(e);
+            }
+            const sortedKeys = Array.from(groups.keys()).sort().reverse();
+            const monthLabel = (k: string) => {
+              const [y, m] = k.split('-').map(Number);
+              return new Date(y, m-1, 1).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+            };
+
+            const allTypes  = Array.from(new Set(archive.map(e => e.auftragstyp).filter(Boolean))) as string[];
+            const allOutcomes = ['bestaetigt','nacharbeiten','abgebrochen'];
+
+            return (
+              <>
+                <div className="flex items-center gap-3 px-6 pt-4 pb-3 flex-shrink-0">
+                  <h2 className="text-lg font-semibold text-ink">Archiv</h2>
+                  <span className="text-xs text-ink-faint tabular-nums">
+                    {filteredArchive.length}{filteredArchive.length !== archive.length ? ` / ${archive.length}` : ''} Einträge
+                  </span>
+                  <button
+                    onClick={() => api<{ entries: Entry[] }>(selectedBoard ? `/api/archive?board=${selectedBoard}` : '/api/archive').then(d => setArchive(d.entries)).catch(() => {})}
+                    className="btn btn-secondary btn-sm ml-auto"
+                    title="Aktualisieren"
+                  >
+                    <span className="material-icons-round" style={{ fontSize: 14 }}>refresh</span>
+                  </button>
+                </div>
+
+                {/* Filter bar */}
+                <div className="px-6 pb-3 flex flex-wrap items-center gap-2 flex-shrink-0">
+                  <div className="relative flex-1 min-w-[220px] max-w-md">
+                    <span
+                      className="material-icons-round absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-faint pointer-events-none"
+                      style={{ fontSize: 16 }}
+                    >search</span>
+                    <input
+                      value={archiveSearch}
+                      onChange={e => setArchiveSearch(e.target.value)}
+                      placeholder="Praxedo ID, Techniker, Grund …"
+                      className="input pl-9 h-9 text-sm w-full"
+                    />
+                  </div>
+                  {!selectedBoard && (
+                    <select
+                      value={archiveFilterBoard}
+                      onChange={e => setArchiveFilterBoard(e.target.value as BoardType | '')}
+                      className="input h-9 text-sm"
+                    >
+                      <option value="">Alle Boards</option>
+                      <option value="neuinstallation">Neuinstallation</option>
+                      <option value="reklamation">Reklamation</option>
+                      <option value="wartung">Wartung</option>
+                    </select>
+                  )}
+                  <select
+                    value={archiveFilterTyp}
+                    onChange={e => setArchiveFilterTyp(e.target.value)}
+                    className="input h-9 text-sm"
+                  >
+                    <option value="">Alle Typen</option>
+                    {allTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <select
+                    value={archiveFilterOutcome}
+                    onChange={e => setArchiveFilterOutcome(e.target.value)}
+                    className="input h-9 text-sm"
+                  >
+                    <option value="">Alle Ergebnisse</option>
+                    {allOutcomes.map(o => <option key={o} value={o}>{o.charAt(0).toUpperCase()+o.slice(1)}</option>)}
+                  </select>
+                  {(archiveSearch || archiveFilterBoard || archiveFilterTyp || archiveFilterOutcome) && (
+                    <button
+                      onClick={() => { setArchiveSearch(''); setArchiveFilterBoard(''); setArchiveFilterTyp(''); setArchiveFilterOutcome(''); }}
+                      className="btn btn-ghost btn-sm"
+                      title="Filter zurücksetzen"
+                    >
+                      <span className="material-icons-round" style={{ fontSize: 14 }}>close</span>
+                      Zurücksetzen
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex-1 overflow-auto px-6 pb-6">
+                  {sortedKeys.length === 0 && (
+                    <p className="py-10 text-center text-ink-faint text-sm">Keine archivierten Einträge.</p>
+                  )}
+                  {sortedKeys.map(key => {
+                    const rows = groups.get(key)!;
+                    return (
+                      <section key={key} className="mb-6">
+                        {/* Bauhaus-style month header */}
+                        <div
+                          className="flex items-baseline gap-3 mb-2 pb-2 border-b-[3px]"
+                          style={{ borderColor: 'rgb(var(--text))' }}
                         >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {archive.map(e => (
-                      <tr key={e.id} className="border-b border-line hover:bg-bg-elevated transition-colors">
-                        <td className="py-2 px-3 font-mono text-xs text-ink-faint">{e.praxedo_id}</td>
-                        <td className="py-2 px-3 font-medium text-ink">{e.kundenname || '—'}</td>
-                        <td className="py-2 px-3 text-ink-muted tabular-nums">{e.telefon || '—'}</td>
-                        <td className="py-2 px-3 text-ink-muted tabular-nums whitespace-nowrap">{fmtDate(e.termin)}</td>
-                        <td className="py-2 px-3 text-ink-muted">{e.zeitraum || '—'}</td>
-                        <td className="py-2 px-3 text-ink-muted">{e.techniker || '—'}</td>
-                        <td className="py-2 px-3 text-ink-muted text-xs">{e.auftragstyp || '—'}</td>
-                        <td className="py-2 px-3 text-ink-muted tabular-nums">{e.wahlversuche}</td>
-                        <td className="py-2 px-3 text-ink-muted">{e.nacharbeiten_abschluss || e.abbruchgrund || '—'}</td>
-                      </tr>
-                    ))}
-                    {archive.length === 0 && (
-                      <tr><td colSpan={9} className="py-10 text-center text-ink-faint">Keine archivierten Einträge.</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
+                          <h3 className="text-base font-bold uppercase tracking-[0.08em] text-ink">
+                            {monthLabel(key)}
+                          </h3>
+                          <span className="text-xs text-ink-faint tabular-nums">{rows.length} Einträge</span>
+                        </div>
+                        <table className="w-full text-sm border-collapse">
+                          <thead>
+                            <tr>
+                              {['Praxedo ID','Board','Typ','Termin','Techniker','Versuche','Ergebnis','Grund/Abschluss','Archiviert'].map(h => (
+                                <th
+                                  key={h}
+                                  className="text-left py-2 px-3 text-[10px] font-bold uppercase tracking-wider text-ink-faint whitespace-nowrap bg-bg-subtle border-b border-line"
+                                >
+                                  {h}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rows.map(e => {
+                              const out = e.outcome ?? (e.abbruchgrund ? 'abgebrochen' : '—');
+                              const outColor =
+                                out === 'bestaetigt' ? 'rgb(var(--status-confirmed))' :
+                                out === 'nacharbeiten' ? 'rgb(var(--status-rework))' :
+                                out === 'abgebrochen' ? 'rgb(var(--status-cancelled))' :
+                                'rgb(var(--text-faint))';
+                              return (
+                                <tr key={e.id} className="border-b border-line hover:bg-bg-elevated transition-colors">
+                                  <td className="py-2 px-3 font-mono text-xs text-ink">{e.praxedo_id}</td>
+                                  <td className="py-2 px-3 text-ink-muted text-xs capitalize">{e.board_type ?? '—'}</td>
+                                  <td className="py-2 px-3 text-ink-muted text-xs">{e.auftragstyp || '—'}</td>
+                                  <td className="py-2 px-3 text-ink-muted tabular-nums whitespace-nowrap">{fmtDate(e.termin)}</td>
+                                  <td className="py-2 px-3 text-ink-muted">{e.techniker || '—'}</td>
+                                  <td className="py-2 px-3 text-ink-muted tabular-nums">{e.wahlversuche}</td>
+                                  <td className="py-2 px-3">
+                                    <span
+                                      className="text-xs font-semibold uppercase tracking-wide"
+                                      style={{ color: outColor }}
+                                    >
+                                      {out}
+                                    </span>
+                                  </td>
+                                  <td className="py-2 px-3 text-ink-muted text-xs">{e.nacharbeiten_abschluss || e.abbruchgrund || '—'}</td>
+                                  <td className="py-2 px-3 text-ink-faint tabular-nums whitespace-nowrap text-xs">
+                                    {fmtDate(e.archived_at ?? e.updated_at ?? e.created_at)}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </section>
+                    );
+                  })}
+                </div>
+              </>
+            );
+          })()}
 
           {/* AKTIVITÄTSLOG */}
           {view === 'log' && (
@@ -1902,6 +2284,53 @@ export default function Dashboard() {
             </div>
           </>
         )}
+      </Modal>
+
+      {/* ── CANCEL PICKER ────────────────────────────────────── */}
+      <Modal open={showCancelPicker} onClose={() => setShowCancelPicker(false)} maxWidth={520}>
+        <ModalHeader title="Kontakt abbrechen" subtitle="Wähle einen Grund — wird im Reporting gespeichert." onClose={() => setShowCancelPicker(false)} />
+        <div className="px-5 pb-5">
+          <div className="flex flex-col gap-1.5 mb-5">
+            {ABBRUCHGRUENDE.map(g => (
+              <label
+                key={g}
+                className={`flex items-center gap-2.5 px-3 py-2.5 cursor-pointer border-[1.5px] transition-colors ${
+                  cancelGrund === g
+                    ? 'border-[rgb(var(--status-cancelled))] bg-[rgb(var(--status-cancelled)/0.08)]'
+                    : 'border-line hover:border-line-strong bg-bg-elevated'
+                }`}
+                style={{ borderRadius: 4 }}
+              >
+                <input
+                  type="radio"
+                  name="abbruchgrund"
+                  value={g}
+                  checked={cancelGrund === g}
+                  onChange={() => setCancelGrund(g)}
+                  className="sr-only"
+                />
+                <span
+                  aria-hidden
+                  className="flex-shrink-0 w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center"
+                  style={{
+                    borderColor: cancelGrund === g ? 'rgb(var(--status-cancelled))' : 'rgb(var(--border-strong))',
+                    backgroundColor: cancelGrund === g ? 'rgb(var(--status-cancelled))' : 'transparent',
+                  }}
+                >
+                  {cancelGrund === g && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                </span>
+                <span className="text-sm text-ink">{g}</span>
+              </label>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setShowCancelPicker(false)} className="btn btn-secondary">Zurück</button>
+            <button onClick={confirmCancelWithReason} className="btn btn-danger" disabled={!cancelGrund}>
+              <span className="material-icons-round" style={{ fontSize: 14 }}>cancel</span>
+              Abbrechen bestätigen
+            </button>
+          </div>
+        </div>
       </Modal>
 
       {/* ── TOASTS ───────────────────────────────────────────── */}

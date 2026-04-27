@@ -6,76 +6,93 @@
 @tailwind utilities;
 
 /* ─────────────────────────────────────────────────────────────
-   Design Tokens — driven from DESIGN.md
-   OKLCH source values converted to sRGB for `rgb(var(...))` consumption.
-   Hue: Blue 258 (primary), Lime 115 (accent).
+   Design Tokens v3 — sharper, bolder, board-aware
+   Hue: Blue 258 (primary), Lime 115 (accent),
+   Wartung 28 (coral), Reklamation 350 (magenta),
+   Neuinstallation 195 (teal).
    ───────────────────────────────────────────────────────────── */
 
 :root {
-  /* Light mode neutrals — tinted toward blue 258 */
-  --bg-base:        252 252 254;   /* oklch(0.99 0.005 258) */
-  --bg-subtle:      247 248 251;   /* oklch(0.975 0.006 258) */
-  --bg-elevated:    255 255 255;   /* oklch(1.00 0.003 258) */
-  --bg-sunken:      241 243 247;   /* oklch(0.96 0.007 258) */
-  --border:         226 230 238;   /* oklch(0.92 0.008 258) */
-  --border-strong:  205 211 224;   /* oklch(0.85 0.010 258) */
-  --text:            21  26  37;   /* oklch(0.20 0.015 258) */
-  --text-muted:      96 104 122;   /* oklch(0.45 0.012 258) */
-  --text-faint:     140 147 163;   /* oklch(0.60 0.010 258) */
+  /* Light neutrals — slightly richer */
+  --bg-base:        252 252 254;
+  --bg-subtle:      245 247 250;
+  --bg-elevated:    255 255 255;
+  --bg-sunken:      238 241 246;
+  --border:         220 226 235;
+  --border-strong:  196 204 218;
+  --text:            17  22  33;
+  --text-muted:      88  96 114;
+  --text-faint:     132 140 156;
 
   /* Brand — Blue (Primary) */
-  --primary-base:    21  79 158;   /* #154f9e */
+  --primary-base:    21  79 158;
   --primary-hover:   17  66 134;
   --primary-press:   13  54 113;
   --primary-fg:     250 251 254;
-  --primary-soft:   227 237 252;
+  --primary-soft:   223 235 252;
 
   /* Brand — Lime (Accent) */
-  --accent-base:    149 193  30;   /* #95c11e */
+  --accent-base:    149 193  30;
   --accent-hover:   122 161  21;
   --accent-fg:       30  41   8;
   --accent-soft:    240 247 217;
 
-  /* Status (semantic) */
-  --status-pending:   142 149 165;
-  --status-active:     59 110 199;
-  --status-rework:    216 156  34;
-  --status-cancelled: 200  72  56;
-  --status-confirmed: 100 165 100;
+  /* Board identities */
+  --board-wartung:         224 100  75;   /* coral */
+  --board-wartung-soft:    253 232 226;
+  --board-reklamation:     200  50 131;   /* magenta */
+  --board-reklamation-soft:251 226 240;
+  --board-neuinstallation:  29 153 148;   /* teal */
+  --board-neuinstallation-soft:217 243 240;
+
+  /* Status — bolder, more confident */
+  --status-pending:   132 142 161;
+  --status-active:     45 102 200;
+  --status-rework:    225 156  20;
+  --status-cancelled: 213  60  44;
+  --status-confirmed:  72 158  82;
 
   color-scheme: light;
 }
 
 .dark {
-  /* Dark mode neutrals — tinted toward blue 258 */
-  --bg-base:         18  21  28;   /* oklch(0.16 0.008 258) */
-  --bg-subtle:       24  28  37;   /* oklch(0.19 0.008 258) */
-  --bg-elevated:     32  37  48;   /* oklch(0.22 0.008 258) */
-  --bg-sunken:       13  16  22;   /* oklch(0.13 0.008 258) */
-  --border:          48  54  68;   /* oklch(0.28 0.010 258) */
-  --border-strong:   66  74  91;   /* oklch(0.36 0.012 258) */
-  --text:           241 243 248;   /* oklch(0.96 0.005 258) */
-  --text-muted:     163 170 186;   /* oklch(0.72 0.008 258) */
-  --text-faint:     112 119 134;   /* oklch(0.55 0.008 258) */
+  /* Dark neutrals — richer chroma, warmer */
+  --bg-base:         15  18  26;
+  --bg-subtle:       22  26  37;
+  --bg-elevated:     31  37  50;
+  --bg-sunken:       11  14  21;
+  --border:          50  58  75;
+  --border-strong:   72  82 102;
+  --text:           242 244 250;
+  --text-muted:     168 175 192;
+  --text-faint:     115 124 140;
 
-  /* Brand — adjusted for dark contrast */
-  --primary-base:    87 144 230;   /* lifted blue for dark bg */
-  --primary-hover:  119 167 240;
-  --primary-press:  152 187 245;
+  /* Primary — deeper royal */
+  --primary-base:    70 110 215;
+  --primary-hover:  100 138 232;
+  --primary-press:  140 170 245;
   --primary-fg:      10  18  32;
-  --primary-soft:    32  52  92;
+  --primary-soft:    36  54  98;
 
   --accent-base:    179 219  72;
   --accent-hover:   199 230 110;
   --accent-fg:       18  26   6;
   --accent-soft:     58  76  20;
 
-  /* Status — slightly brighter for dark bg */
+  /* Board identities — slightly desaturated for dark */
+  --board-wartung:         232 120  98;
+  --board-wartung-soft:     74  35  28;
+  --board-reklamation:     220  88 162;
+  --board-reklamation-soft: 70  24  48;
+  --board-neuinstallation:  60 188 180;
+  --board-neuinstallation-soft: 18  60  58;
+
+  /* Status — lila / dunkelgrün accents */
   --status-pending:   142 149 165;
-  --status-active:    119 167 240;
+  --status-active:    140 105 220;   /* lila */
   --status-rework:    230 178  68;
   --status-cancelled: 232  98  82;
-  --status-confirmed: 130 195 130;
+  --status-confirmed:  70 145  95;   /* dunkelgrün */
 
   color-scheme: dark;
 }
@@ -98,29 +115,24 @@
                 color 180ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  /* Tabular numerals everywhere counts/times appear */
   .tabular,
   time, [data-numeric] {
     font-variant-numeric: tabular-nums;
   }
 
-  /* Material Icons — inherit color */
   .material-icons-round { color: inherit; }
 
-  /* Selection */
   ::selection {
     background-color: rgb(var(--primary-base) / 0.25);
     color: rgb(var(--text));
   }
 
-  /* Focus visible (replaces default ugly outline) */
   :focus-visible {
     outline: 2px solid rgb(var(--primary-base));
     outline-offset: 2px;
     border-radius: 4px;
   }
 
-  /* Scrollbar — subtle, themeable */
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
@@ -137,12 +149,13 @@
 }
 
 @layer components {
-  /* Buttons — base + variants */
+  /* Buttons — sharper, more deliberate */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-md
+    @apply inline-flex items-center justify-center gap-2 rounded
            font-medium text-sm transition-all duration-120 ease-out-quart
            select-none whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed
            focus-visible:outline-none;
+    border-radius: 4px;
     height: 2rem;
     padding: 0 0.875rem;
   }
@@ -154,7 +167,10 @@
     color: rgb(var(--primary-fg));
   }
   .btn-primary:hover { background-color: rgb(var(--primary-hover)); }
-  .btn-primary:active { background-color: rgb(var(--primary-press)); }
+  .btn-primary:active {
+    background-color: rgb(var(--primary-press));
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.15);
+  }
   .btn-primary:focus-visible {
     box-shadow: 0 0 0 2px rgb(var(--bg-base)), 0 0 0 4px rgb(var(--primary-base) / 0.5);
     outline: none;
@@ -163,12 +179,13 @@
   .btn-secondary {
     background-color: rgb(var(--bg-elevated));
     color: rgb(var(--text));
-    border: 1px solid rgb(var(--border));
+    border: 1.5px solid rgb(var(--border));
   }
   .btn-secondary:hover {
     background-color: rgb(var(--bg-sunken));
     border-color: rgb(var(--border-strong));
   }
+  .btn-secondary:active { box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.08); }
 
   .btn-ghost {
     background-color: transparent;
@@ -184,13 +201,15 @@
     color: white;
   }
   .btn-danger:hover { filter: brightness(0.92); }
+  .btn-danger:active { box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.18); }
 
-  /* Input */
+  /* Input — sharper, thicker border */
   .input {
-    @apply w-full rounded-md text-sm transition-all duration-120;
+    @apply w-full text-sm transition-all duration-120;
     background-color: rgb(var(--bg-sunken));
     color: rgb(var(--text));
-    border: 1px solid rgb(var(--border));
+    border: 1.5px solid rgb(var(--border));
+    border-radius: 4px;
     height: 2.25rem;
     padding: 0 0.75rem;
   }
@@ -202,53 +221,120 @@
   }
   textarea.input { height: auto; padding: 0.625rem 0.75rem; line-height: 1.5; }
 
-  /* Card primitive */
+  /* Card primitive — sharper corners, thicker border */
   .card {
     background-color: rgb(var(--bg-elevated));
-    border: 1px solid rgb(var(--border));
-    border-radius: 10px;
+    border: 1.5px solid rgb(var(--border));
+    border-radius: 4px;
     transition: border-color 120ms ease-out, transform 120ms ease-out, box-shadow 120ms ease-out;
   }
   .card-hover:hover {
     border-color: rgb(var(--border-strong));
-    box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
     transform: translateY(-1px);
   }
 
-  /* Status pill */
+  /* Pill — keep softer corners so it reads as a tag */
   .pill {
-    @apply inline-flex items-center gap-1.5 rounded-sm px-2 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-medium;
+    border-radius: 6px;
     line-height: 1.25rem;
   }
   .pill-dot { width: 6px; height: 6px; border-radius: 999px; flex-shrink: 0; }
 
-  /* Modal backdrop */
+  /* Modal backdrop and panel */
   .modal-backdrop {
-    background-color: rgb(var(--bg-base) / 0.6);
+    background-color: rgb(var(--bg-base) / 0.55);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
   }
   .modal-panel {
     background-color: rgb(var(--bg-elevated));
-    border: 1px solid rgb(var(--border));
-    border-radius: 14px;
-    box-shadow: 0 12px 32px rgb(0 0 0 / 0.10), 0 4px 12px rgb(0 0 0 / 0.06);
+    border: 1.5px solid rgb(var(--border));
+    border-radius: 6px;
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.14), 0 4px 12px rgb(0 0 0 / 0.08);
   }
+
+  /* Slide panel (right edge) */
+  .slide-panel {
+    background-color: rgb(var(--bg-elevated));
+    border-left: 1.5px solid rgb(var(--border));
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+    box-shadow: -16px 0 32px rgb(0 0 0 / 0.12), -4px 0 12px rgb(0 0 0 / 0.06);
+  }
+
+  /* Custom checkbox — square, 4px radius, 1.5px border */
+  .checkbox {
+    @apply inline-flex items-center justify-center transition-all duration-120;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1.5px solid rgb(var(--border-strong));
+    background-color: rgb(var(--bg-elevated));
+    flex-shrink: 0;
+  }
+  .checkbox:hover { border-color: rgb(var(--primary-base)); }
+  .checkbox.checked {
+    background-color: rgb(var(--primary-base));
+    border-color: rgb(var(--primary-base));
+  }
+
+  /* Toggle / Switch */
+  .toggle {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    border-radius: 999px;
+    background-color: rgb(var(--bg-sunken));
+    border: 1.5px solid rgb(var(--border));
+    transition: background-color 180ms cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 180ms;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .toggle.on {
+    background-color: rgb(var(--primary-base));
+    border-color: rgb(var(--primary-base));
+  }
+  .toggle .knob {
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background-color: white;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+    transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .toggle.on .knob { transform: translateX(16px); }
 }
 
 @layer utilities {
   .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
 
-  /* Subtle inset highlight for dark-mode floating layers */
   .dark .floating {
     box-shadow:
-      0 12px 32px rgb(0 0 0 / 0.4),
-      0 4px 12px rgb(0 0 0 / 0.25),
+      0 12px 32px rgb(0 0 0 / 0.45),
+      0 4px 12px rgb(0 0 0 / 0.30),
       inset 0 1px 0 rgb(255 255 255 / 0.04);
   }
+
+  /* Striped table rows */
+  .row-striped:nth-child(odd)  { background-color: rgb(var(--bg-elevated)); }
+  .row-striped:nth-child(even) { background-color: rgb(var(--bg-subtle)); }
+  .row-striped:hover           { background-color: rgb(var(--bg-sunken)); }
 }
 
-/* Reduced motion */
+/* Slide-in-from-right keyframe for the right-edge panel */
+@keyframes slide-from-right {
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(0); }
+}
+.animate-slide-from-right {
+  animation: slide-from-right 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

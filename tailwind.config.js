@@ -41,6 +41,14 @@ module.exports = {
           cancelled: 'rgb(var(--status-cancelled) / <alpha-value>)',
           confirmed: 'rgb(var(--status-confirmed) / <alpha-value>)',
         },
+        board: {
+          wartung: 'rgb(var(--board-wartung) / <alpha-value>)',
+          'wartung-soft': 'rgb(var(--board-wartung-soft) / <alpha-value>)',
+          reklamation: 'rgb(var(--board-reklamation) / <alpha-value>)',
+          'reklamation-soft': 'rgb(var(--board-reklamation-soft) / <alpha-value>)',
+          neuinstallation: 'rgb(var(--board-neuinstallation) / <alpha-value>)',
+          'neuinstallation-soft': 'rgb(var(--board-neuinstallation-soft) / <alpha-value>)',
+        },
         // Legacy brand alias — keep building until full migration
         brand: {
           50: '#f6fbe8', 100: '#ebf5d0', 200: '#d5eba1', 300: '#bbdc68',
@@ -62,7 +70,8 @@ module.exports = {
         '3xl': ['2rem', { lineHeight: '1.15', letterSpacing: '-0.02em' }],
       },
       borderRadius: {
-        sm: '6px', md: '10px', lg: '14px', xl: '20px',
+        sm: '4px', md: '4px', lg: '6px', xl: '10px',
+        pill: '6px',
       },
       boxShadow: {
         sm: '0 1px 2px rgb(0 0 0 / 0.04)',

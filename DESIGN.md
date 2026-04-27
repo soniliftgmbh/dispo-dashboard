@@ -11,9 +11,21 @@ Szene Dark: Dispatcher abends im Homeoffice, gedimmtes Licht, drei Stunden konze
 
 Beide Modi sind warm-neutral getönt (leichter Brand-Hue im Neutral). Kein reines Schwarz, kein reines Weiß.
 
-## Color Strategy
+## Color Strategy (v3, sharper)
 
-**Committed.** Zwei Brand-Farben tragen das System:
+**Drei Ebenen** tragen das System:
+1. **Primary Blue (`#154f9e`)** — CTAs, Fokus, Brand
+2. **Lime Accent (`#95c11e`)** — Wordmark-Punkt, Success, Highlight
+3. **Board-Identitäten** — pro Auftragstyp eine eigene Farbe, bewusst eingesetzt auf Spaltenheadern, Board-Switcher und Sidebar-Rail:
+   - **Wartung** → Coral `oklch(0.66 0.18 28)` (~#e0644b)
+   - **Reklamation** → Magenta `oklch(0.58 0.21 350)` (~#c83283)
+   - **Neuinstallation** → Teal `oklch(0.58 0.13 195)` (~#1d9994)
+
+Status-Farben sind semantisch und satter geworden (Blau/Amber/Rot/Grün). Im Dark Mode bekommen Status warme Akzente: `aktiv` = Lila, `bestaetigt` = Dunkelgrün, `primary` = tiefer Royal-Blau.
+
+**Sharper edges:** Cards/Buttons/Inputs auf 4px Radius, Modals auf 6px, Pills bleiben 6px. Border-Standard auf Cards/Inputs erhöht auf 1.5px. Spaltenheader bekommen 3px Color-Bar in der Board-Identitätsfarbe.
+
+**(Legacy aus v2):** Zwei Brand-Farben tragen das System:
 - **Blau (Primary)** — primäre Aktionen, Fokusring, Active-State, interaktive Elemente. Gibt Souveränität und ist universell als "klickbar" lesbar.
 - **Lime (Accent)** — Brand-Mark, Success-States, positive Highlights, Pro-Hovers. Maximal 5–8% der Fläche.
 
