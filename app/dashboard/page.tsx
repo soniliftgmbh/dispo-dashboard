@@ -128,7 +128,7 @@ function KanbanCard({
       onClick={onClick}
       className={`card card-hover group relative cursor-pointer p-3 pl-9 pr-3.5 transition-all
         ${selected ? '!border-primary' : ''}`}
-      style={selected ? { boxShadow: '0 0 0 2px rgb(var(--primary-base) / 0.25)' } : undefined}
+      style={selected ? { boxShadow: '0 0 0 2px rgb(var(--primary-base) / 0.30), 0 4px 10px rgb(0 0 0 / 0.06)' } : undefined}
     >
       {/* Bulk-select checkbox — top-left, always visible */}
       <div className="absolute top-2.5 left-2.5 z-10">
@@ -1180,48 +1180,26 @@ export default function Dashboard() {
                 );
               })()}
 
-              {/* Kanban Columns */}
+              {/* Kanban Columns — Atelier tiles */}
               <div className="flex-1 overflow-x-auto overflow-y-hidden flex gap-3 px-6 pt-1 pb-6">
                 {COL_CONFIG.map(col => {
                   const colCards = filtered.filter(e => e.status === col.id);
                   return (
                     <div
                       key={col.id}
-                      className="flex-shrink-0 w-[280px] flex flex-col"
+                      className="kanban-tile flex-shrink-0 w-[288px]"
+                      style={{ ['--board-color' as string]: `var(--board-${selectedBoard})` }}
                     >
-                      {/* Column header — Neo-Bauhaus solid block, sharp edges */}
-                      <div
-                        className="px-3 py-2.5 flex items-center justify-between gap-2 sticky top-0 z-[1] mb-2"
-                        style={{
-                          backgroundColor: boardColorRgb(selectedBoard),
-                          borderRadius: 0,
-                          boxShadow: '3px 3px 0 0 rgb(var(--text) / 0.12)',
-                        }}
-                      >
-                        <span
-                          className="text-[11px] font-bold uppercase tracking-[0.12em]"
-                          style={{ color: 'white' }}
-                        >
-                          {col.label}
-                        </span>
-                        <span
-                          className="text-[11px] font-bold tabular-nums px-1.5 py-0.5"
-                          style={{
-                            color: boardColorRgb(selectedBoard),
-                            backgroundColor: 'white',
-                            borderRadius: 0,
-                            minWidth: 22,
-                            textAlign: 'center',
-                          }}
-                        >
-                          {colCards.length}
-                        </span>
+                      {/* Tile head: count tile + bold caps label */}
+                      <div className="kanban-tile__head">
+                        <div className="kanban-tile__count">{colCards.length}</div>
+                        <div className="kanban-tile__label">{col.label}</div>
                       </div>
 
-                      <div className="flex-1 overflow-y-auto flex flex-col gap-2 pr-1 -mr-1">
+                      <div className="kanban-tile__body">
                         {colCards.length === 0 ? (
-                          <div className="text-center py-8 text-xs text-ink-faint">
-                            Keine Einträge
+                          <div className="text-center py-10 text-xs text-ink-faint italic">
+                            Leer
                           </div>
                         ) : colCards.map(e => (
                           <KanbanCard

@@ -2,6 +2,30 @@
 
 Visuelles System für Anna Dashboard. Light und Dark sind gleichwertig — beide werden parallel definiert.
 
+## Aktuelle Iteration: v4 „Atelier" (April 2026)
+
+**Wechsel von Plakat-Bauhaus (v3) zu Werkstatt-Tray.** Die Vollsättigung in v3 wirkte im Tool-Kontext wie Arcade-Marketing. v4 setzt auf gestapelte Tiefe, reifere Pigmente, echte Schatten.
+
+### Board-Palette (Light)
+- **Wartung** → Ochre `#D4A24A` — warmes Gold, aktiv ohne zu schreien
+- **Reklamation** → Rust `#B05540` — erdiger Ernst
+- **Neuinstallation** → Petrol `#2A8088` — tiefe Ruhe
+
+### Board-Palette (Dark)
+- **Wartung** → Warmes Gold
+- **Reklamation** → Plum (Lila-Lean — wie gewünscht)
+- **Neuinstallation** → Forest-Petrol (Dunkelgrün-Lean)
+
+### Kanban-Architektur
+- **Spalte = Tray** mit getöntem Hintergrund (5–8% Board-Farbe), 1px Border, 8px Radius.
+- **Header** trägt das Board-Identitäts-Quadrat (28px Vollfarbe + weiße Bold-Zahl) als Anker — nicht die ganze Header-Fläche.
+- **Karten** sind elevated mit echtem 2-Layer-Schatten, 6px Radius, 1px Border, Lift on Hover.
+
+**Weg von:** Vollflächigen Farbblöcken, harten 0-Radien, Hard-Shadow-Offsets.
+**Hin zu:** Anker-Element + getönter Schale + schwebenden Karten.
+
+---
+
 ## Theme
 
 **Dual: Light + Dark, system-default mit manuellem Toggle.**

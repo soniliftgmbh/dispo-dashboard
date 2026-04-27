@@ -37,13 +37,13 @@
   --accent-fg:       30  41   8;
   --accent-soft:    240 247 217;
 
-  /* Board identities */
-  --board-wartung:         224 100  75;   /* coral */
-  --board-wartung-soft:    253 232 226;
-  --board-reklamation:     200  50 131;   /* magenta */
-  --board-reklamation-soft:251 226 240;
-  --board-neuinstallation:  29 153 148;   /* teal */
-  --board-neuinstallation-soft:217 243 240;
+  /* Board identities — Atelier palette: ochre / rust / petrol */
+  --board-wartung:         212 162  74;   /* ochre */
+  --board-wartung-soft:    250 240 218;
+  --board-reklamation:     176  85  64;   /* rust */
+  --board-reklamation-soft:248 230 222;
+  --board-neuinstallation:  42 128 136;   /* petrol-teal */
+  --board-neuinstallation-soft:218 236 238;
 
   /* Status — bolder, more confident */
   --status-pending:   132 142 161;
@@ -79,13 +79,13 @@
   --accent-fg:       18  26   6;
   --accent-soft:     58  76  20;
 
-  /* Board identities — slightly desaturated for dark */
-  --board-wartung:         232 120  98;
-  --board-wartung-soft:     74  35  28;
-  --board-reklamation:     220  88 162;
-  --board-reklamation-soft: 70  24  48;
-  --board-neuinstallation:  60 188 180;
-  --board-neuinstallation-soft: 18  60  58;
+  /* Board identities — Dark Atelier: gold / plum-rust / forest-petrol */
+  --board-wartung:         222 178  98;   /* warm gold */
+  --board-wartung-soft:     58  46  22;
+  --board-reklamation:     198 120 178;   /* plum (lila lean) */
+  --board-reklamation-soft: 56  30  56;
+  --board-neuinstallation:  98 178 168;   /* forest-petrol */
+  --board-neuinstallation-soft: 18  52  56;
 
   /* Status — lila / dunkelgrün accents */
   --status-pending:   142 149 165;
@@ -221,16 +221,76 @@
   }
   textarea.input { height: auto; padding: 0.625rem 0.75rem; line-height: 1.5; }
 
-  /* Card primitive — sharper corners, thicker border */
+  /* Card primitive — soft elevation, real shadow, lift on hover */
   .card {
     background-color: rgb(var(--bg-elevated));
-    border: 1.5px solid rgb(var(--border));
-    border-radius: 4px;
-    transition: border-color 120ms ease-out, transform 120ms ease-out, box-shadow 120ms ease-out;
+    border: 1px solid rgb(var(--border));
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 3px rgb(0 0 0 / 0.05);
+    transition: border-color 140ms ease-out, transform 140ms ease-out, box-shadow 140ms ease-out;
   }
   .card-hover:hover {
     border-color: rgb(var(--border-strong));
     transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgb(0 0 0 / 0.07), 0 1px 3px rgb(0 0 0 / 0.05);
+  }
+  .dark .card {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.30), 0 1px 3px rgb(0 0 0 / 0.20);
+  }
+  .dark .card-hover:hover {
+    box-shadow: 0 6px 16px rgb(0 0 0 / 0.40), 0 2px 4px rgb(0 0 0 / 0.30);
+  }
+
+  /* Kanban tile — getönter Tray, Board-aware */
+  .kanban-tile {
+    border-radius: 8px;
+    border: 1px solid rgb(var(--board-color) / 0.22);
+    background-color: rgb(var(--board-color) / 0.05);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .dark .kanban-tile {
+    background-color: rgb(var(--board-color) / 0.08);
+    border-color: rgb(var(--board-color) / 0.28);
+  }
+  .kanban-tile__head {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.625rem 0.75rem;
+    border-bottom: 1px solid rgb(var(--board-color) / 0.18);
+  }
+  .kanban-tile__count {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(var(--board-color));
+    color: white;
+    font-weight: 700;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    border-radius: 4px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .kanban-tile__label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgb(var(--text));
+    line-height: 1;
+  }
+  .kanban-tile__body {
+    padding: 0.5rem;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
   /* Pill — keep softer corners so it reads as a tag */
