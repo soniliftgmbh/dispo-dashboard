@@ -1188,7 +1188,10 @@ export default function Dashboard() {
                     <div
                       key={col.id}
                       className="kanban-tile flex-shrink-0 w-[288px]"
-                      style={{ ['--board-color' as string]: `var(--board-${selectedBoard})` }}
+                      style={{
+                        ['--board-color' as string]: `var(--board-${selectedBoard})`,
+                        ['--board-color-glow' as string]: `var(--board-${selectedBoard}-glow)`,
+                      }}
                     >
                       {/* Tile head: count tile + bold caps label */}
                       <div className="kanban-tile__head">

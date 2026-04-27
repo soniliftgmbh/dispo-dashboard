@@ -37,13 +37,16 @@
   --accent-fg:       30  41   8;
   --accent-soft:    240 247 217;
 
-  /* Board identities — Atelier palette: ochre / rust / petrol */
-  --board-wartung:         212 162  74;   /* ochre */
-  --board-wartung-soft:    250 240 218;
-  --board-reklamation:     176  85  64;   /* rust */
-  --board-reklamation-soft:248 230 222;
-  --board-neuinstallation:  42 128 136;   /* petrol-teal */
-  --board-neuinstallation-soft:218 236 238;
+  /* Board identities — Luminescence: Saffron / Coral-Rose / Aqua */
+  --board-wartung:         245 166  35;   /* saffron */
+  --board-wartung-glow:    255 195  90;   /* lighter for halo */
+  --board-wartung-soft:    255 243 224;
+  --board-reklamation:     232  93 117;   /* coral-rose */
+  --board-reklamation-glow:255 138 158;
+  --board-reklamation-soft:254 230 234;
+  --board-neuinstallation:  15 169 201;   /* aqua */
+  --board-neuinstallation-glow: 80 205 230;
+  --board-neuinstallation-soft:217 240 247;
 
   /* Status — bolder, more confident */
   --status-pending:   132 142 161;
@@ -79,13 +82,16 @@
   --accent-fg:       18  26   6;
   --accent-soft:     58  76  20;
 
-  /* Board identities — Dark Atelier: gold / plum-rust / forest-petrol */
-  --board-wartung:         222 178  98;   /* warm gold */
-  --board-wartung-soft:     58  46  22;
-  --board-reklamation:     198 120 178;   /* plum (lila lean) */
-  --board-reklamation-soft: 56  30  56;
-  --board-neuinstallation:  98 178 168;   /* forest-petrol */
-  --board-neuinstallation-soft: 18  52  56;
+  /* Board identities — Dark Luminescence: Honey / Rose-Violet / Aqua-Cyan */
+  --board-wartung:         250 196 110;   /* honey glow */
+  --board-wartung-glow:    255 215 145;
+  --board-wartung-soft:     58  44  20;
+  --board-reklamation:     232 130 195;   /* rose-violet */
+  --board-reklamation-glow:255 158 215;
+  --board-reklamation-soft: 60  28  56;
+  --board-neuinstallation:  90 210 232;   /* aqua-cyan */
+  --board-neuinstallation-glow:140 230 248;
+  --board-neuinstallation-soft: 16  56  68;
 
   /* Status — lila / dunkelgrün accents */
   --status-pending:   142 149 165;
@@ -221,71 +227,121 @@
   }
   textarea.input { height: auto; padding: 0.625rem 0.75rem; line-height: 1.5; }
 
-  /* Card primitive — soft elevation, real shadow, lift on hover */
+  /* Card primitive — Luminescence: hairline gradient border, lit from above */
   .card {
+    position: relative;
     background-color: rgb(var(--bg-elevated));
+    background-image: linear-gradient(180deg,
+      rgb(var(--bg-elevated)) 0%,
+      rgb(var(--bg-sunken) / 0.35) 100%);
     border: 1px solid rgb(var(--border));
-    border-radius: 6px;
-    box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 3px rgb(0 0 0 / 0.05);
-    transition: border-color 140ms ease-out, transform 140ms ease-out, box-shadow 140ms ease-out;
+    border-radius: 8px;
+    box-shadow:
+      0 1px 0 0 rgb(255 255 255 / 0.6) inset,
+      0 1px 2px rgb(0 0 0 / 0.04),
+      0 2px 6px rgb(0 0 0 / 0.05);
+    transition: border-color 160ms ease-out, transform 160ms ease-out, box-shadow 200ms ease-out;
   }
   .card-hover:hover {
     border-color: rgb(var(--border-strong));
     transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgb(0 0 0 / 0.07), 0 1px 3px rgb(0 0 0 / 0.05);
+    box-shadow:
+      0 1px 0 0 rgb(255 255 255 / 0.7) inset,
+      0 6px 16px rgb(0 0 0 / 0.08),
+      0 2px 5px rgb(0 0 0 / 0.06);
   }
   .dark .card {
-    box-shadow: 0 1px 2px rgb(0 0 0 / 0.30), 0 1px 3px rgb(0 0 0 / 0.20);
+    background-image: linear-gradient(180deg,
+      rgb(var(--bg-elevated)) 0%,
+      rgb(var(--bg-sunken) / 0.6) 100%);
+    box-shadow:
+      0 1px 0 0 rgb(255 255 255 / 0.04) inset,
+      0 1px 2px rgb(0 0 0 / 0.40),
+      0 2px 6px rgb(0 0 0 / 0.25);
   }
   .dark .card-hover:hover {
-    box-shadow: 0 6px 16px rgb(0 0 0 / 0.40), 0 2px 4px rgb(0 0 0 / 0.30);
+    box-shadow:
+      0 1px 0 0 rgb(255 255 255 / 0.06) inset,
+      0 8px 20px rgb(0 0 0 / 0.45),
+      0 3px 6px rgb(0 0 0 / 0.30);
   }
 
-  /* Kanban tile — getönter Tray, Board-aware */
+  /* Kanban tile — Luminescence: Gradient-Tray + Glow Anchor */
   .kanban-tile {
-    border-radius: 8px;
+    position: relative;
+    border-radius: 12px;
     border: 1px solid rgb(var(--board-color) / 0.22);
-    background-color: rgb(var(--board-color) / 0.05);
+    background-image: linear-gradient(180deg,
+      rgb(var(--board-color) / 0.10) 0%,
+      rgb(var(--board-color) / 0.02) 60%,
+      rgb(var(--bg-elevated) / 0) 100%);
+    background-color: rgb(var(--bg-elevated) / 0.4);
     display: flex;
     flex-direction: column;
     min-height: 0;
+    box-shadow:
+      0 1px 0 0 rgb(255 255 255 / 0.5) inset,
+      0 1px 3px rgb(0 0 0 / 0.04);
   }
   .dark .kanban-tile {
-    background-color: rgb(var(--board-color) / 0.08);
-    border-color: rgb(var(--board-color) / 0.28);
+    background-image: linear-gradient(180deg,
+      rgb(var(--board-color) / 0.16) 0%,
+      rgb(var(--board-color) / 0.04) 70%,
+      rgb(var(--bg-elevated) / 0) 100%);
+    background-color: rgb(var(--bg-elevated) / 0.3);
+    border-color: rgb(var(--board-color) / 0.32);
+    box-shadow:
+      0 1px 0 0 rgb(255 255 255 / 0.04) inset,
+      0 1px 4px rgb(0 0 0 / 0.30);
   }
   .kanban-tile__head {
     display: flex;
     align-items: center;
     gap: 0.625rem;
-    padding: 0.625rem 0.75rem;
+    padding: 0.75rem 0.875rem 0.625rem;
     border-bottom: 1px solid rgb(var(--board-color) / 0.18);
   }
   .kanban-tile__count {
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background-color: rgb(var(--board-color));
+    background-image: linear-gradient(135deg,
+      rgb(var(--board-color-glow, var(--board-color))) 0%,
+      rgb(var(--board-color)) 100%);
     color: white;
     font-weight: 700;
     font-size: 12px;
     font-variant-numeric: tabular-nums;
-    border-radius: 4px;
+    border-radius: 7px;
     line-height: 1;
     flex-shrink: 0;
+    /* Luminous halo */
+    box-shadow:
+      0 0 0 1px rgb(var(--board-color) / 0.20),
+      0 4px 12px rgb(var(--board-color) / 0.30),
+      0 1px 2px rgb(var(--board-color) / 0.20),
+      0 1px 0 0 rgb(255 255 255 / 0.25) inset;
+    text-shadow: 0 1px 0 rgb(0 0 0 / 0.10);
+  }
+  .dark .kanban-tile__count {
+    box-shadow:
+      0 0 0 1px rgb(var(--board-color) / 0.30),
+      0 6px 18px rgb(var(--board-color) / 0.35),
+      0 2px 4px rgb(var(--board-color) / 0.25),
+      0 1px 0 0 rgb(255 255 255 / 0.18) inset;
   }
   .kanban-tile__label {
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.12em;
     color: rgb(var(--text));
     line-height: 1;
   }
   .kanban-tile__body {
-    padding: 0.5rem;
+    padding: 0.625rem;
     flex: 1;
     overflow-y: auto;
     display: flex;

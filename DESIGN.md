@@ -2,27 +2,34 @@
 
 Visuelles System für Anna Dashboard. Light und Dark sind gleichwertig — beide werden parallel definiert.
 
-## Aktuelle Iteration: v4 „Atelier" (April 2026)
+## Aktuelle Iteration: v5 „Luminescence" (April 2026)
 
-**Wechsel von Plakat-Bauhaus (v3) zu Werkstatt-Tray.** Die Vollsättigung in v3 wirkte im Tool-Kontext wie Arcade-Marketing. v4 setzt auf gestapelte Tiefe, reifere Pigmente, echte Schatten.
+**Wechsel von Atelier zu Luminescence.** Atelier war reif aber stumpf. v5 setzt auf leuchtende Jewel-Tones mit weichem Halo, papier-weiße Karten mit „lit from above"-Charakter. Premium-Materialqualität wie Linear-Plus oder Arc Browser.
 
 ### Board-Palette (Light)
-- **Wartung** → Ochre `#D4A24A` — warmes Gold, aktiv ohne zu schreien
-- **Reklamation** → Rust `#B05540` — erdiger Ernst
-- **Neuinstallation** → Petrol `#2A8088` — tiefe Ruhe
+- **Wartung** → Saffron `#F5A623` mit Goldglühen
+- **Reklamation** → Coral-Rose `#E85D75` warm-aktiv
+- **Neuinstallation** → Aqua `#0FA9C9` leuchtend kalt
 
 ### Board-Palette (Dark)
-- **Wartung** → Warmes Gold
-- **Reklamation** → Plum (Lila-Lean — wie gewünscht)
-- **Neuinstallation** → Forest-Petrol (Dunkelgrün-Lean)
+- **Wartung** → Honey-Glow mit warmem Halo
+- **Reklamation** → Rose-Violet (Lila-Lean) mit Magenta-Glow
+- **Neuinstallation** → Aqua-Cyan mit kühlem Halo
 
-### Kanban-Architektur
-- **Spalte = Tray** mit getöntem Hintergrund (5–8% Board-Farbe), 1px Border, 8px Radius.
-- **Header** trägt das Board-Identitäts-Quadrat (28px Vollfarbe + weiße Bold-Zahl) als Anker — nicht die ganze Header-Fläche.
-- **Karten** sind elevated mit echtem 2-Layer-Schatten, 6px Radius, 1px Border, Lift on Hover.
+### Premium-Zutaten
+1. **Glow-Halo** auf Anker-Quadraten (12–18px Blur, 30% Board-Farbe). Eigene `--board-X-glow` Tokens für Gradient-Highlight.
+2. **Gradient-Tray-Bg** in Spalten (oben 10% Board-Tint → unten transparent). Tiefe ohne Aufdringlichkeit.
+3. **Hairline-Inset-Highlight** auf Cards & Tiles (`box-shadow: 0 1px 0 inset rgba(255,255,255,.6)`) — „lit from above"-Effekt.
+4. **Subtiler Surface-Gradient** auf Karten (top heller, unten leicht gesunken).
+5. **Radien sanfter:** Cards 8px, Tiles 12px, Anker 7px.
 
-**Weg von:** Vollflächigen Farbblöcken, harten 0-Radien, Hard-Shadow-Offsets.
-**Hin zu:** Anker-Element + getönter Schale + schwebenden Karten.
+### Architektur
+- **Spalte** = Tray mit Light-Top-Glow + transparentem Bottom (papier-Materialgefühl)
+- **Anker-Quadrat** = 30px, Linear-Gradient von Glow- zu Base-Farbe + 12px farbiger Box-Shadow-Halo
+- **Karte** = subtle vertical-gradient Surface, Hairline-Inset-Highlight, Lift on Hover
+
+**Weg von:** Erdigen Pigmenten, flatten Trays, hart abgegrenzten Anker-Quadraten.
+**Hin zu:** Leuchtenden Kristallen, weichem Halo, materieller Tiefe.
 
 ---
 
