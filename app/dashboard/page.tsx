@@ -104,12 +104,13 @@ function copyToClipboard(text: string) {
 }
 
 // ── COLUMN CONFIG ─────────────────────────────────────────────
-const COL_CONFIG: { id: Status; label: string }[] = [
-  { id: 'ausstehend',   label: 'Ausstehend' },
-  { id: 'aktiv',        label: 'Aktiv' },
-  { id: 'nacharbeiten', label: 'Nacharbeiten' },
-  { id: 'abgebrochen',  label: 'Abgebrochen' },
-  { id: 'bestaetigt',   label: 'Bestätigt' },
+// Each status drives its own color (board-übergreifend identisch).
+const COL_CONFIG: { id: Status; label: string; statusVar: string }[] = [
+  { id: 'ausstehend',   label: 'Ausstehend',   statusVar: 'pending' },
+  { id: 'aktiv',        label: 'Aktiv',        statusVar: 'active' },
+  { id: 'nacharbeiten', label: 'Nacharbeiten', statusVar: 'rework' },
+  { id: 'abgebrochen',  label: 'Abgebrochen',  statusVar: 'cancelled' },
+  { id: 'bestaetigt',   label: 'Bestätigt',    statusVar: 'confirmed' },
 ];
 
 // ── KANBAN CARD ───────────────────────────────────────────────
@@ -835,11 +836,23 @@ export default function Dashboard() {
             <button
               key={b}
               onClick={() => selectBoard(b)}
-              className={`px-3 h-7 text-xs font-medium rounded-[5px] transition-colors duration-120
+              className={`px-3 h-7 text-xs font-medium rounded-[5px] transition-colors duration-120 relative
                 ${active
                   ? 'bg-bg-elevated text-ink shadow-sm'
                   : 'text-ink-muted hover:text-ink'}`}
+              style={active ? {
+                boxShadow: `0 1px 2px rgb(0 0 0 / 0.06), 0 0 0 1px rgb(var(--board-${b}) / 0.30), 0 4px 12px rgb(var(--board-${b}) / 0.18)`,
+              } : undefined}
             >
+              {active && (
+                <span
+                  aria-hidden
+                  className="absolute left-2 right-2 -bottom-px h-[2px] rounded-full"
+                  style={{
+                    background: `linear-gradient(90deg, rgb(var(--board-${b}) / 0) 0%, rgb(var(--board-${b}-glow)) 50%, rgb(var(--board-${b}) / 0) 100%)`,
+                  }}
+                />
+              )}
               {boardLabel(b)}
             </button>
           );
@@ -906,6 +919,20 @@ export default function Dashboard() {
   // ── DASHBOARD (Board gewählt) ─────────────────────────────────
   return (
     <div className="h-screen flex flex-col bg-bg-subtle">
+
+      {/* Ambient board-color strip — sits at the very top, ultra-subtle */}
+      <div
+        aria-hidden
+        className="h-[2px] flex-shrink-0"
+        style={{
+          background: `linear-gradient(90deg,
+            rgb(var(--board-${selectedBoard}) / 0) 0%,
+            rgb(var(--board-${selectedBoard}-glow)) 35%,
+            rgb(var(--board-${selectedBoard})) 50%,
+            rgb(var(--board-${selectedBoard}-glow)) 65%,
+            rgb(var(--board-${selectedBoard}) / 0) 100%)`,
+        }}
+      />
 
       {/* ── TOP BAR ──────────────────────────────────────────── */}
       <header className="h-14 bg-bg-elevated border-b border-line flex items-center gap-3 px-4 flex-shrink-0">
@@ -1189,8 +1216,8 @@ export default function Dashboard() {
                       key={col.id}
                       className="kanban-tile flex-shrink-0 w-[288px]"
                       style={{
-                        ['--board-color' as string]: `var(--board-${selectedBoard})`,
-                        ['--board-color-glow' as string]: `var(--board-${selectedBoard}-glow)`,
+                        ['--status-color' as string]: `var(--status-${col.statusVar})`,
+                        ['--status-color-glow' as string]: `var(--status-${col.statusVar}-glow)`,
                       }}
                     >
                       {/* Tile head: count tile + bold caps label */}

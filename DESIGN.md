@@ -2,7 +2,47 @@
 
 Visuelles System für Anna Dashboard. Light und Dark sind gleichwertig — beide werden parallel definiert.
 
-## Aktuelle Iteration: v5 „Luminescence" (April 2026)
+## Aktuelle Iteration: v6 „Liquid Glass" (April 2026)
+
+**Klare semantische Trennung erreicht:**
+- **Board = Identität.** Lebt im Top-Bar-Akzent (2px Gradient-Strip + Board-Switch-Glow).
+- **Status = Spaltenfarbe.** Board-übergreifend identisch — „Aktiv ist immer Aqua, Bestätigt ist immer Emerald".
+
+### Status-Palette (Light)
+- Ausstehend → Slate-Indigo `#6B7CB2`
+- Aktiv → Aqua `#0FA9C9`
+- Nacharbeiten → Amber `#F59E0B`
+- Abgebrochen → Coral-Rose `#E85D75`
+- Bestätigt → Emerald `#10B981`
+
+### Status-Palette (Dark)
+- Ausstehend → Soft Indigo
+- Aktiv → Cyan
+- Nacharbeiten → Honey
+- Abgebrochen → Rose-Violet (Lila-Lean)
+- Bestätigt → Mint
+
+### Liquid Glass Cards
+- `backdrop-filter: blur(20px) saturate(180%)` — frostet die Statusfarbe der Spalte ein
+- Hairline-Border `rgb(255 255 255 / 0.55)` + Inset-Highlight oben
+- Top-Gloss-Gradient via `::before` (subtle Glanzkante)
+- 12px Radius
+- Hover: stärkerer Backdrop-Blur durch Opacity-Bump (62% → 78%) + Lift +2px
+
+### Top-Bar Board-Identität
+- 2px Glow-Gradient-Strip oben über dem Header (Board-Identitätsfarbe)
+- Aktiver Board-Switch-Tab: 2px Underline-Gradient + farbiger Box-Shadow-Halo
+
+### Status-Spalten-Tile
+- Gradient-Tray in Status-Farbe (12% top → transparent)
+- Anker-Quadrat 30px in Status-Vollfarbe mit 14px Halo-Shadow
+- 14px Radius
+
+---
+
+## Vorgänger-Iterationen (Archiv)
+
+### v5 „Luminescence" (Board-driven Spalten)
 
 **Wechsel von Atelier zu Luminescence.** Atelier war reif aber stumpf. v5 setzt auf leuchtende Jewel-Tones mit weichem Halo, papier-weiße Karten mit „lit from above"-Charakter. Premium-Materialqualität wie Linear-Plus oder Arc Browser.
 
