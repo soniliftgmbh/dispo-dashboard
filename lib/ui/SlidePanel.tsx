@@ -63,7 +63,7 @@ export function SlidePanelHeader({
 
 export function SlidePanelFooter({ children }: { children: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-2 px-5 py-3 border-t-[1.5px] border-line flex-shrink-0 bg-bg-elevated">
+    <div className="flex items-center justify-between gap-2 px-5 py-3 border-t border-line flex-shrink-0">
       {children}
     </div>
   );

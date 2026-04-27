@@ -1070,8 +1070,15 @@ export default function Dashboard() {
           {view === 'kanban' && (
             <>
               {/* Toolbar */}
-              <div className="flex items-center gap-3 px-6 pt-4 pb-2 flex-shrink-0">
-                <h2 className="text-lg font-semibold text-ink">{boardLabel(selectedBoard)}</h2>
+              <div
+                className="flex items-center gap-3 px-6 pt-4 pb-2 flex-shrink-0"
+                style={{
+                  ['--board-color' as string]: `var(--board-${selectedBoard ?? 'wartung'})`,
+                  ['--board-color-glow' as string]: `var(--board-${selectedBoard ?? 'wartung'}-glow)`,
+                  ['--board-color-soft' as string]: `var(--board-${selectedBoard ?? 'wartung'}-soft)`,
+                }}
+              >
+                <span className="board-pill">{boardLabel(selectedBoard)}</span>
                 <span className="text-xs text-ink-faint tabular-nums">{filtered.length} Einträge</span>
 
                 {/* Filter-Leiste */}
@@ -1999,15 +2006,16 @@ export default function Dashboard() {
         </div>
       </Modal>
 
-      {/* ── MODAL: DETAIL ─────────────────────────────────────── */}
-      <Modal
+      {/* ── SLIDE PANEL: DETAIL ───────────────────────────────── */}
+      <SlidePanel
         open={!!detailEntry}
         onClose={() => setDetailEntry(null)}
-        maxWidth={920}
+        width={720}
+        ariaLabel="Kontaktdetails"
       >
         {detailEntry && (
           <>
-            <ModalHeader
+            <SlidePanelHeader
               title={detailEntry.kundenname || `ID ${detailEntry.praxedo_id}`}
               subtitle={
                 <button
@@ -2044,7 +2052,7 @@ export default function Dashboard() {
               }
             />
 
-            <div className="p-6">
+            <div className="flex-1 overflow-y-auto p-6">
               {/* Kundendaten */}
               <p className="text-[10px] font-medium uppercase tracking-wider text-ink-faint mb-2">Kundendaten</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-5">
@@ -2282,24 +2290,23 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* Footer */}
-              <div className="flex justify-between items-center pt-4 border-t border-line">
-                <button onClick={archiveEntry} className="btn btn-ghost btn-sm">
-                  <span className="material-icons-round" style={{ fontSize: 14 }}>archive</span>
-                  Archivieren
-                </button>
-                <div className="flex gap-2">
-                  <button onClick={() => setDetailEntry(null)} className="btn btn-secondary">Schließen</button>
-                  <button onClick={saveDetail} className="btn btn-primary">
-                    <span className="material-icons-round" style={{ fontSize: 14 }}>save</span>
-                    Speichern
-                  </button>
-                </div>
-              </div>
             </div>
+            <SlidePanelFooter>
+              <button onClick={archiveEntry} className="btn btn-ghost btn-sm">
+                <span className="material-icons-round" style={{ fontSize: 14 }}>archive</span>
+                Archivieren
+              </button>
+              <div className="flex gap-2">
+                <button onClick={() => setDetailEntry(null)} className="btn btn-secondary">Schließen</button>
+                <button onClick={saveDetail} className="btn btn-primary">
+                  <span className="material-icons-round" style={{ fontSize: 14 }}>save</span>
+                  Speichern
+                </button>
+              </div>
+            </SlidePanelFooter>
           </>
         )}
-      </Modal>
+      </SlidePanel>
 
       {/* ── CANCEL PICKER ────────────────────────────────────── */}
       <Modal open={showCancelPicker} onClose={() => setShowCancelPicker(false)} maxWidth={520}>
